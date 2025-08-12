@@ -2,34 +2,35 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 讀取 Render 提供的動態埠；本機預設 5030
+// === Render 埠號設定（本機預設 5030） ===
 var portEnv = Environment.GetEnvironmentVariable("PORT");
 var port = string.IsNullOrWhiteSpace(portEnv) ? "5030" : portEnv;
-// 讓 Kestrel 綁定到 0.0.0.0:PORT（Render 必須這樣）
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
-// 先開放 CORS（之後可收斂來源）
-builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
-
-// 決定 SQLite 實體檔案路徑：Render 用 /tmp，可寫；本機用專案目錄
-string dbPath;
-if (string.IsNullOrWhiteSpace(portEnv))
+// === CORS：只允許 GitHub Pages 與本機 ===
+var allowedOrigins = new[]
 {
-    // 本機
-    dbPath = Path.Combine(Directory.GetCurrentDirectory(), "wfhdemo.db");
-}
-else
+    "https://rachelchiang2002-lab.github.io", // 你的 GitHub Pages 網域
+    "http://localhost:5030",
+    "http://127.0.0.1:5030"
+};
+builder.Services.AddCors(options =>
 {
-    // 雲端（Render）
-    dbPath = "/tmp/wfhdemo.db";
-}
+    options.AddPolicy("AppCors", policy =>
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
 
-// 設定 SQLite
-builder.Services.AddDbContext<AppDb>(opt =>
-    opt.UseSqlite($"Data Source={dbPath}"));
+// === SQLite 路徑：Render 用 /tmp，本機用專案資料夾 ===
+string dbPath = string.IsNullOrWhiteSpace(portEnv)
+    ? Path.Combine(Directory.GetCurrentDirectory(), "wfhdemo.db")
+    : "/tmp/wfhdemo.db";
+
+builder.Services.AddDbContext<AppDb>(opt => opt.UseSqlite($"Data Source={dbPath}"));
 
 var app = builder.Build();
-app.UseCors();
+app.UseCors("AppCors");
 
 // 啟動時若資料庫不存在就建立
 using (var scope = app.Services.CreateScope())
@@ -38,11 +39,11 @@ using (var scope = app.Services.CreateScope())
     db.Database.EnsureCreated();
 }
 
-// 簡單首頁 & 健康檢查
+// ---- Health & Root ----
 app.MapGet("/", () => "WFH Api is running");
 app.MapGet("/api/health", () => new { ok = true, time = DateTime.UtcNow });
 
-// 建立申請單（最小可行版）
+// ---- Applications ----
 app.MapPost("/api/applications", async (AppDb db, CreateAppDto dto) =>
 {
     var row = new ApplicationRow
@@ -57,13 +58,11 @@ app.MapPost("/api/applications", async (AppDb db, CreateAppDto dto) =>
         SubmitTime     = DateTime.UtcNow,
         LastUpdateTime = DateTime.UtcNow
     };
-
     db.Applications.Add(row);
     await db.SaveChangesAsync();
     return Results.Ok(new { appId = row.AppId });
 });
 
-// 讀取所有申請單
 app.MapGet("/api/applications", async (AppDb db) =>
 {
     var list = await db.Applications
@@ -73,7 +72,7 @@ app.MapGet("/api/applications", async (AppDb db) =>
     return Results.Ok(list);
 });
 
-// 核准：pending_section -> pending_department -> approved
+// ---- Approve / Reject ----
 app.MapPost("/api/approve", async (AppDb db, ActionDto dto) =>
 {
     var appRow = await db.Applications.FindAsync(dto.AppId);
@@ -102,7 +101,6 @@ app.MapPost("/api/approve", async (AppDb db, ActionDto dto) =>
     return Results.Ok(new { status = appRow.Status });
 });
 
-// 駁回：僅允許在兩個待審狀態
 app.MapPost("/api/reject", async (AppDb db, ActionDto dto) =>
 {
     var appRow = await db.Applications.FindAsync(dto.AppId);
@@ -131,7 +129,7 @@ app.MapPost("/api/reject", async (AppDb db, ActionDto dto) =>
     return Results.Ok(new { status = appRow.Status });
 });
 
-// 查詢稽核軌跡
+// ---- 查稽核軌跡 ----
 app.MapGet("/api/approvals", async (AppDb db, long appId) =>
 {
     var list = await db.Approvals
