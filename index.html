@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <title>WFH Demo（雲端）</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+<body style="font-family:system-ui,-apple-system;max-width:720px;margin:32px auto;padding:0 16px;">
+  <h2>送出申請（連雲端 API）</h2>
+
+  <form id="f">
+    <label>日期（以逗號分隔）<br>
+      <input id="dates" style="width:100%" value="2025-08-20,2025-08-21">
+    </label><br><br>
+
+    <label>類型
+      <select id="type">
+        <option value="regular" selected>regular</option>
+        <option value="urgent">urgent</option>
+      </select>
+    </label><br><br>
+
+    <label>原因<br>
+      <input id="reason" style="width:100%" value="雲端測試送件">
+    </label><br><br>
+
+    <button type="submit">送出申請</button>
+  </form>
+
+  <p style="margin-top:20px">
+    <button id="btnList">查看清單</button>
+    <button id="btnApprovals" disabled>查看稽核軌跡</button>
+  </p>
+
+  <pre id="out" style="white-space:pre-wrap;background:#f6f8fa;padding:12px;border-radius:8px"></pre>
+
+  <script>
+    const API_BASE = "https://wfh-demo.onrender.com"; // ← 若你的網址不同，改這裡
+
+    const $ = (id) => document.getElementById(id);
+    const show = (obj) => $("out").textContent = typeof obj === "string" ? obj : JSON.stringify(obj,null,2);
+
+    document.getElementById('f').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const dates = $("dates").value.split(",").map(s=>s.trim()).filter(Boolean);
+      const type = $("type").value || "regular";
+      const reason = $("reason").value || "";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/applications`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ dates, type, reason })
+        });
+        const data = await res.json();
+        show({ 送出結果: data, 查清單: `${API_BASE}/api/applications` });
+        // 啟用「查看稽核」按鈕
+        if (data.appId) {
+          $("btnApprovals").disabled = false;
+          $("btnApprovals").onclick = async () => {
+            const r = await fetch(`${API_BASE}/api/approvals?appId=${data.appId}`);
+            show(await r.json());
+          };
+        }
+      } catch (err) {
+        show("送出失敗：" + err);
+      }
+    });
+
+    $("btnList").addEventListener("click", async () => {
+      const res = await fetch(`${API_BASE}/api/applications`);
+      show(await res.json());
+    });
+  </script>
+</body>
+</html>
