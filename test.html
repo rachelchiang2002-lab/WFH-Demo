@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <title>WFH 申請測試頁</title>
+</head>
+<body>
+  <h2>送出申請（測試）</h2>
+  <form id="f">
+    <label>日期（以逗號分隔，如 2025-08-20,2025-08-21）：<br>
+      <input id="dates" style="width:360px" value="2025-08-20,2025-08-21">
+    </label><br><br>
+    <label>類型：
+      <select id="type">
+        <option value="regular" selected>regular</option>
+        <option value="urgent">urgent</option>
+      </select>
+    </label><br><br>
+    <label>原因：<br>
+      <input id="reason" style="width:360px" value="測試送件（前端）">
+    </label><br><br>
+    <button type="submit">送出申請</button>
+  </form>
+
+  <pre id="out" style="margin-top:20px;white-space:pre-wrap;"></pre>
+
+  <script>
+    const API = "http://localhost:5030"; // 若之後埠號不同再改
+
+    document.getElementById('f').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const dates = document.getElementById('dates').value
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+      const type = document.getElementById('type').value;
+      const reason = document.getElementById('reason').value;
+
+      const res = await fetch(`${API}/api/applications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dates, type, reason })
+      });
+      const data = await res.json();
+      document.getElementById('out').textContent =
+        '送出結果：\n' + JSON.stringify(data, null, 2) +
+        '\n\n目前清單：\n(請手動刷新下方連結)\n' +
+        `${API}/api/applications`;
+    });
+  </script>
+</body>
+</html>
