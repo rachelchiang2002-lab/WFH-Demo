@@ -62,14 +62,25 @@ builder.Services.AddAuthorization();
 
 // ─── 極簡「使用者清單」：10 人內 Demo 用 ────────────────────────────────
 // 密碼請用 BCrypt 雜湊；下方示範兩位，其他可依樣新增
+// ─── 極簡「使用者清單」：10 人內 Demo 用 ────────────────────────────────
 var users = new List<SimpleUser>
 {
-    new SimpleUser { Username = "alice", Name = "Alice Chen",  Role = "user", 
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456") },
-    new SimpleUser { Username = "boss",  Name = "Dept Head",   Role = "approver",
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword("secret") }
-    // 再加：new SimpleUser { Username="john", Name="John", Role="user", PasswordHash=BCrypt.HashPassword("密碼") }
+    new SimpleUser { Username = "Rachel", Name = "Rachel", Role = "L1",
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") },
+    new SimpleUser { Username = "Joan",   Name = "Joan",   Role = "user",
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") },
+    new SimpleUser { Username = "Amanda", Name = "Amanda", Role = "user",
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") },
+    new SimpleUser { Username = "Albee",  Name = "Albee",  Role = "user",
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") },
+    new SimpleUser { Username = "Emily",  Name = "Emily",  Role = "user",
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") },
+    new SimpleUser { Username = "CE",     Name = "CE",     Role = "user",
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") },
+    new SimpleUser { Username = "Jason",  Name = "Jason",  Role = "L2",
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") }
 };
+
 
 var app = builder.Build();
 app.UseCors("AppCors");
