@@ -485,7 +485,8 @@
         }
 
         // 申請表單提交
-        document.getElementById('applyForm').addEventListener('submit', function(e) {
+        document.getElementById('applyForm').addEventListener('submit', async function(e) {
+
             e.preventDefault();
             
             const type = document.getElementById('applyType').value;
