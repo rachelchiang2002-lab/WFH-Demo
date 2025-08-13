@@ -133,63 +133,62 @@
       return fetch(`${API_BASE}${path}`, { ...options, headers });
     }
 
-    // === 抓元素 ===
-    const loginSection = $("#loginSection");
-    const loginForm = $("#loginForm");
-    const userInput = $("#username");
-    const passInput = $("#password");
-    const loginError = $("#loginError");
-    const appSection = $("#appSection");
-    const whoami = $("#whoami");
-    const logoutBtn = $("#logoutBtn");
-    const btnDemoCreate = $("#btnDemoCreate");
-    const btnList = $("#btnList");
+    // ====== Login：只有在按登入且有帳密時才打 /api/login ======
+const loginForm  = document.querySelector('#loginForm');
+const userInput  = document.querySelector('#username');
+const passInput  = document.querySelector('#password');
+const loginError = document.querySelector('#loginError');
 
-    // === 畫面切換 ===
-    function toApp(me){
-      loginSection?.classList.add("hidden");
-      appSection?.classList.remove("hidden");
-      if(whoami && me) whoami.textContent = `${me.name || me.username}（${me.role || ""}）`;
-    }
-    function toLogin(){
-      appSection?.classList.add("hidden");
-      loginSection?.classList.remove("hidden");
-      if(loginError) loginError.textContent = "";
-    }
+loginForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  loginError && (loginError.textContent = '');
 
-    // 如果本地已有 token，就先讓使用者進主畫面（避免空白）
-    if(getToken()){ toApp(); }
+  const username = (userInput?.value || '').trim();
+  const password = (passInput?.value || '').trim();
+  if (!username || !password) {
+    loginError && (loginError.textContent = '請輸入帳號與密碼');
+    return;
+  }
 
-    // === 登入 ===
-    loginForm?.addEventListener("submit", async (e)=>{
-      e.preventDefault();
-      loginError.textContent = "";
+  try {
+    // 可選：先喚醒後端，避免免費方案冷啟動
+    await fetch(`${API_BASE}/api/health`).catch(()=>{});
 
-      try{
-        // 先喚醒後端（免費方案冷啟動）
-        fetch(`${API_BASE}/api/health`).catch(()=>{});
-        const res = await fetch(`${API_BASE}/api/login`, {
-          method:"POST",
-          headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify({
-            username: (userInput?.value||"").trim(),
-            password: (passInput?.value||"")
-          })
-        });
-        if(!res.ok){
-          loginError.textContent = res.status===401 ? "帳號或密碼錯誤" : `登入失敗（${res.status}）`;
-          return;
-        }
-        const data = await res.json(); // { token, name, role }
-        saveToken(data.token);
-        toApp(data);
-        alert(`登入成功：${data.name||""}（${data.role||""}）`);
-      }catch(err){
-        loginError.textContent = "登入失敗，請稍後再試";
-        console.error(err);
-      }
+    const res = await fetch(`${API_BASE}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ username, password })
     });
 
+    if (!res.ok) {
+      if (res.status === 401) {
+        loginError && (loginError.textContent = '帳號或密碼錯誤');
+      } else {
+        loginError && (loginError.textContent = `登入失敗（${res.status}）`);
+      }
+      return;
+    }
+
+    const data = await res.json(); // { token, name, role }
+    if (!data?.token) {
+      loginError && (loginError.textContent = '登入回應不完整');
+      return;
+    }
+
+    saveToken(data.token);
+    // 顯示誰登入
+    const who = document.querySelector('#whoami');
+    if (who) who.textContent = `${data.name}（${data.role}）`;
+
+    // 切換到主畫面
+    toApp();
+
+  } catch (err) {
+    console.error(err);
+    loginError && (loginError.textContent = '登入失敗，請稍後再試');
+  }
+});
+    
     // === 登出 ===
     logoutBtn?.addEventListener("click", ()=>{
       clearToken();
