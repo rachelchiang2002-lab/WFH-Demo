@@ -36,30 +36,79 @@
     </section>
 
     <!-- 主畫面：登入成功才顯示 -->
-    <section id="appSection" class="hidden bg-white rounded-2xl shadow-lg p-6 md:p-8">
-      <div class="flex items-start justify-between mb-6">
-        <div>
-          <h2 class="text-xl font-bold">申請作業</h2>
-          <p class="text-slate-500" id="whoami">已登入</p>
-        </div>
-        <button id="logoutBtn" class="px-4 py-2 rounded-lg border text-slate-700 hover:bg-slate-50">登出</button>
+    <section id="appSection" class="bg-white rounded-2xl shadow-lg p-0 overflow-hidden w-full">
+  <!-- 頂端導覽列 -->
+  <header class="flex items-center justify-between bg-slate-50 px-6 py-4 border-b">
+    <nav class="flex gap-6 text-sm">
+      <a class="text-blue-600 font-medium border-b-2 border-blue-600 pb-1" href="javascript:void(0)">申請居家上班</a>
+      <a class="text-slate-500 hover:text-slate-700" href="javascript:void(0)">待核准申請</a>
+      <a class="text-slate-500 hover:text-slate-700" href="javascript:void(0)">申請記錄</a>
+      <a class="text-slate-500 hover:text-slate-700" href="javascript:void(0)">月報統計</a>
+    </nav>
+    <div class="flex items-center gap-3 text-sm">
+      <span id="whoami" class="text-slate-600">Rachel（L1）</span>
+      <button id="logoutBtn" class="px-3 py-1.5 rounded-lg border text-slate-700 hover:bg-slate-100">登出</button>
+    </div>
+  </header>
+
+  <!-- 內容區 -->
+  <div class="p-6 md:p-8">
+    <h2 class="text-lg font-semibold mb-4">申請居家上班</h2>
+
+    <!-- 三個統計卡片 -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div class="rounded-xl border bg-indigo-50/40 p-4">
+        <p class="text-violet-700 text-3xl font-extrabold text-center" id="cntWeek">5</p>
+        <p class="text-center text-slate-500 text-sm">本周剩餘天數<br><span class="text-xs">(單周最多 5 天)</span></p>
+      </div>
+      <div class="rounded-xl border bg-blue-50/40 p-4">
+        <p class="text-blue-700 text-3xl font-extrabold text-center" id="cntBiWeek">10</p>
+        <p class="text-center text-slate-500 text-sm">雙周剩餘天數<br><span class="text-xs">(兩週合計最多 10 天)</span></p>
+      </div>
+      <div class="rounded-xl border bg-emerald-50/40 p-4">
+        <p class="text-emerald-700 text-3xl font-extrabold text-center" id="cntMonth">20</p>
+        <p class="text-center text-slate-500 text-sm">本月剩餘天數<br><span class="text-xs">(每月最多 20 天)</span></p>
+      </div>
+    </div>
+
+    <!-- 申請表單 -->
+    <form id="applyForm" class="space-y-4 max-w-3xl">
+      <!-- 申請類型 -->
+      <div>
+        <label class="block text-sm text-slate-600 mb-1">申請類型</label>
+        <select id="applyType" class="w-full border rounded-lg px-3 py-2 outline-none focus:ring focus:ring-blue-200">
+          <option value="" selected>請選擇</option>
+          <option value="regular">一般（regular）</option>
+          <option value="urgent">急件（urgent）</option>
+        </select>
       </div>
 
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div class="border rounded-xl p-4">
-          <h3 class="font-semibold mb-2">送出申請（範例）</h3>
-          <p class="text-sm text-slate-500 mb-3">會送兩天 regular 申請，純測試。</p>
-          <button id="btnDemoCreate" class="px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">送出測試申請</button>
-        </div>
-        <div class="border rounded-xl p-4">
-          <h3 class="font-semibold mb-2">查看清單</h3>
-          <p class="text-sm text-slate-500 mb-3">列出最近的申請資料。</p>
-          <button id="btnList" class="px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">讀取清單</button>
+      <!-- 日期（最多五天） -->
+      <div>
+        <label class="block text-sm text-slate-600 mb-1">申請日期（最多可選 5 天）</label>
+        <div class="space-y-3">
+          <input type="date" class="applyDate w-full border rounded-lg px-3 py-2">
+          <input type="date" class="applyDate w-full border rounded-lg px-3 py-2">
+          <input type="date" class="applyDate w-full border rounded-lg px-3 py-2">
+          <input type="date" class="applyDate w-full border rounded-lg px-3 py-2">
+          <input type="date" class="applyDate w-full border rounded-lg px-3 py-2">
         </div>
       </div>
 
-      <pre id="out" class="mt-6 p-3 bg-slate-50 rounded-lg text-sm overflow-auto max-h-80"></pre>
-    </section>
+      <!-- 送出 -->
+      <div class="pt-2">
+        <button id="btnSubmit" type="submit"
+                class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+          提交申請
+        </button>
+        <span id="applyMsg" class="ml-3 text-sm text-slate-600"></span>
+      </div>
+    </form>
+
+    <!-- 結果輸出區（保留） -->
+    <pre id="out" class="mt-6 p-3 bg-slate-50 rounded-lg text-sm overflow-auto max-h-80"></pre>
+  </div>
+</section>
   </main>
 
   <!-- 內嵌 JS：不再依賴 main.js 檔，避免 404 -->
