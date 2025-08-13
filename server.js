@@ -16,7 +16,11 @@ app.get('/api/applications', async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Database error' });
+    if (err.code === '42P01') { // 表不存在錯誤
+      res.json([]); // 臨時返回空陣列
+    } else {
+      res.status(500).json({ error: 'Database error' });
+    }
   }
 });
 
