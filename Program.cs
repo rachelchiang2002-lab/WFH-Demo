@@ -1,142 +1,81 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using BCrypt.Net;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Http.Json;
+using System.Text.Json.Serialization;
 
-// --------- 切換是否強制驗證（先保持 false，等前端改好再切 true）---------
-const bool REQUIRE_AUTH = false;
+// ===================== 程式主體（Top-level） =====================
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ─── Render 埠號設定（本機預設 5030） ─────────────────────────────────────
-var portEnv = Environment.GetEnvironmentVariable("PORT");
-var port = string.IsNullOrWhiteSpace(portEnv) ? "5030" : portEnv;
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
-
-// ─── CORS：允許 GitHub Pages 與本機（可再加白名單） ─────────────────────
-var allowedOrigins = new[]
+// JSON 行為
+builder.Services.Configure<JsonOptions>(o =>
 {
-    "https://rachelchiang2002-lab.github.io",
-    "http://localhost:5030",
-    "http://127.0.0.1:5030"
-};
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AppCors", policy =>
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()
-              .AllowAnyMethod());
+    o.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
 
-// ─── SQLite 路徑：Render 用 /tmp，本機用專案資料夾 ─────────────────────
-string dbPath = string.IsNullOrWhiteSpace(portEnv)
-    ? Path.Combine(Directory.GetCurrentDirectory(), "wfhdemo.db")
-    : "/tmp/wfhdemo.db";
-builder.Services.AddDbContext<AppDb>(opt => opt.UseSqlite($"Data Source={dbPath}"));
-
-// ─── JWT 驗證設定 ────────────────────────────────────────────────────────
-// Demo 用密鑰：可設環境變數 JWT_KEY 覆蓋
-var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") 
-             ?? "dev-very-secret-key-please-change";
-var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
-var signingKey = new SymmetricSecurityKey(keyBytes);
-
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(opt =>
-    {
-        opt.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = signingKey,
-            ClockSkew = TimeSpan.Zero
-        };
-    });
-
-builder.Services.AddAuthorization();
-
-// ─── 極簡「使用者清單」：10 人內 Demo 用 ────────────────────────────────
-// 密碼請用 BCrypt 雜湊；下方示範兩位，其他可依樣新增
-// ─── 極簡「使用者清單」：10 人內 Demo 用 ────────────────────────────────
-var users = new List<SimpleUser>
+// CORS：全開（測試/PoC 用；之後可收斂成公司網域）
+builder.Services.AddCors(opt =>
 {
-    new SimpleUser { Username = "Rachel", Name = "Rachel", Role = "L1",
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") },
-    new SimpleUser { Username = "Joan",   Name = "Joan",   Role = "user",
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") },
-    new SimpleUser { Username = "Amanda", Name = "Amanda", Role = "user",
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") },
-    new SimpleUser { Username = "Albee",  Name = "Albee",  Role = "user",
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") },
-    new SimpleUser { Username = "Emily",  Name = "Emily",  Role = "user",
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") },
-    new SimpleUser { Username = "CE",     Name = "CE",     Role = "user",
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") },
-    new SimpleUser { Username = "Jason",  Name = "Jason",  Role = "L2",
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234") }
-};
+    opt.AddPolicy("AllowAll", p => p
+        .AllowAnyOrigin()
+        .AllowAnyHeader()
+        .AllowAnyMethod());
+});
 
+// SQLite 位置：雲端 /tmp、本機檔案
+var isCloud = Environment.GetEnvironmentVariable("RENDER") == "true";
+var dbPath  = isCloud ? "/tmp/wfhdemo.db" : "wfhdemo.db";
+builder.Services.AddDbContext<AppDb>(o => o.UseSqlite($"Data Source={dbPath}"));
 
 var app = builder.Build();
-app.UseCors("AppCors");
 
-// 啟動時若資料庫不存在就建立
+// 掛 CORS（務必在 Map 端點前）
+app.UseCors("AllowAll");
+
+// 回應所有預檢（OPTIONS），避免 415/CORS header 缺失
+app.MapMethods("/{*any}", new[] { "OPTIONS" }, (HttpRequest _) => Results.Ok());
+
+// 健康檢查/首頁
+app.MapGet("/", () => Results.Text("WFH Api is running"));
+app.MapGet("/api/health", () => Results.Json(new { ok = true, time = DateTime.UtcNow }));
+
+// 啟動時建 DB
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDb>();
     db.Database.EnsureCreated();
 }
 
-// ─── Health 與首頁（匿名） ───────────────────────────────────────────────
-app.MapGet("/", () => "WFH Api is running");
-app.MapGet("/api/health", () => new { ok = true, time = DateTime.UtcNow });
+// ===== 測試帳號（簡易版） =====
+var Users = new Dictionary<string,(string Name,string Role,string Password)>(StringComparer.OrdinalIgnoreCase) {
+    ["Rachel"]  = ("Rachel","L1","1234"),
+    ["Joan"]    = ("Joan","user","1234"),
+    ["Amanda"]  = ("Amanda","user","1234"),
+    ["Albee"]   = ("Albee","user","1234"),
+    ["Emily"]   = ("Emily","user","1234"),
+    ["CE"]      = ("CE","user","1234"),
+    ["Jason"]   = ("Jason","L2","1234"),
+};
 
-// ─── 登入（匿名）：POST /api/login 取得 JWT ─────────────────────────────
+// 登入（接 JSON）
 app.MapPost("/api/login", (LoginDto dto) =>
 {
-    var u = users.FirstOrDefault(x => x.Username.Equals(dto.Username, StringComparison.OrdinalIgnoreCase));
-    if (u is null || !BCrypt.Net.BCrypt.Verify(dto.Password ?? "", u.PasswordHash))
+    if (!Users.TryGetValue(dto.Username, out var u) || u.Password != dto.Password)
         return Results.Unauthorized();
 
-    var claims = new[]
-    {
-        new Claim(JwtRegisteredClaimNames.Sub, u.Username),
-        new Claim(ClaimTypes.Name, u.Name ?? u.Username),
-        new Claim(ClaimTypes.Role, u.Role ?? "user")
-    };
+    var token = Convert.ToBase64String(Guid.NewGuid().ToByteArray()); // Demo token
+    return Results.Json(new { token, name = u.Name, role = u.Role });
+})
+.Accepts<LoginDto>("application/json");
 
-    var token = new JwtSecurityToken(
-        claims: claims,
-        expires: DateTime.UtcNow.AddHours(8), // 有效 8 小時（可調成 1 天）
-        signingCredentials: new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256)
-    );
-
-    var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-    return Results.Ok(new { token = jwt, name = u.Name, role = u.Role });
-}).AllowAnonymous();
-
-// ─── API 群組（可一鍵切換是否需要認證） ─────────────────────────────────
-var api = app.MapGroup("/api");
-if (REQUIRE_AUTH)
+// 建立申請
+app.MapPost("/api/applications", async (AppDb db, CreateAppDto dto) =>
 {
-    api.RequireAuthorization(); // 切 true 後，除了上面標 AllowAnonymous 的，其餘都要帶 Bearer
-}
-
-// 建立申請單
-api.MapPost("/applications", async (AppDb db, CreateAppDto dto) =>
-{
-    var row = new ApplicationRow
-    {
+    var row = new ApplicationRow {
         ApplicantEmail = "demo@local",
         ApplicantName  = "Demo User",
         Department     = "DemoDept",
         DatesJson      = System.Text.Json.JsonSerializer.Serialize(dto.Dates ?? Array.Empty<string>()),
-        Type           = string.IsNullOrWhiteSpace(dto.Type) ? "regular" : dto.Type,
+        Type           = string.IsNullOrWhiteSpace(dto.Type) ? "regular" : dto.Type!,
         Reason         = dto.Reason,
         Status         = "pending_section",
         SubmitTime     = DateTime.UtcNow,
@@ -145,10 +84,11 @@ api.MapPost("/applications", async (AppDb db, CreateAppDto dto) =>
     db.Applications.Add(row);
     await db.SaveChangesAsync();
     return Results.Ok(new { appId = row.AppId });
-});
+})
+.Accepts<CreateAppDto>("application/json");
 
-// 讀取申請單清單
-api.MapGet("/applications", async (AppDb db) =>
+// 查詢申請
+app.MapGet("/api/applications", async (AppDb db) =>
 {
     var list = await db.Applications
         .OrderByDescending(x => x.SubmitTime)
@@ -157,8 +97,8 @@ api.MapGet("/applications", async (AppDb db) =>
     return Results.Ok(list);
 });
 
-// 核准（pending_section -> pending_department -> approved）
-api.MapPost("/approve", async (AppDb db, ActionDto dto) =>
+// 核准
+app.MapPost("/api/approve", async (AppDb db, ActionDto dto) =>
 {
     var appRow = await db.Applications.FindAsync(dto.AppId);
     if (appRow is null) return Results.NotFound(new { message = "找不到申請單" });
@@ -171,23 +111,18 @@ api.MapPost("/approve", async (AppDb db, ActionDto dto) =>
 
     var seq = await db.Approvals.CountAsync(x => x.AppId == appRow.AppId) + 1;
     db.Approvals.Add(new ApprovalRow {
-        AppId = appRow.AppId,
-        ActionSeq = seq,
-        ActorEmail = "approver@local",
-        ActorName  = "Approver",
-        ActorRole  = "section_head",
-        Action     = "approved",
-        Comment    = dto.Comment,
-        ActorIp    = null,
-        ActionTime = DateTime.UtcNow
+        AppId = appRow.AppId, ActionSeq = seq, ActorEmail = "approver@local",
+        ActorName = "Approver", ActorRole = "section_head", Action = "approved",
+        Comment = dto.Comment, ActorIp = null, ActionTime = DateTime.UtcNow
     });
 
     await db.SaveChangesAsync();
     return Results.Ok(new { status = appRow.Status });
-});
+})
+.Accepts<ActionDto>("application/json");
 
 // 駁回
-api.MapPost("/reject", async (AppDb db, ActionDto dto) =>
+app.MapPost("/api/reject", async (AppDb db, ActionDto dto) =>
 {
     var appRow = await db.Applications.FindAsync(dto.AppId);
     if (appRow is null) return Results.NotFound(new { message = "找不到申請單" });
@@ -200,23 +135,18 @@ api.MapPost("/reject", async (AppDb db, ActionDto dto) =>
 
     var seq = await db.Approvals.CountAsync(x => x.AppId == appRow.AppId) + 1;
     db.Approvals.Add(new ApprovalRow {
-        AppId = appRow.AppId,
-        ActionSeq = seq,
-        ActorEmail = "approver@local",
-        ActorName  = "Approver",
-        ActorRole  = "section_head",
-        Action     = "rejected",
-        Comment    = dto.Comment,
-        ActorIp    = null,
-        ActionTime = DateTime.UtcNow
+        AppId = appRow.AppId, ActionSeq = seq, ActorEmail = "approver@local",
+        ActorName = "Approver", ActorRole = "section_head", Action = "rejected",
+        Comment = dto.Comment, ActorIp = null, ActionTime = DateTime.UtcNow
     });
 
     await db.SaveChangesAsync();
     return Results.Ok(new { status = appRow.Status });
-});
+})
+.Accepts<ActionDto>("application/json");
 
-// 查稽核軌跡
-api.MapGet("/approvals", async (AppDb db, long appId) =>
+// 稽核軌跡
+app.MapGet("/api/approvals", async (AppDb db, long appId) =>
 {
     var list = await db.Approvals
         .Where(x => x.AppId == appId)
@@ -225,20 +155,9 @@ api.MapGet("/approvals", async (AppDb db, long appId) =>
     return Results.Ok(list);
 });
 
-// 啟用驗證/授權中介軟體（放在 Map 之後也 OK）
-app.UseAuthentication();
-app.UseAuthorization();
-
 app.Run();
 
-// ─── DTO & 簡易使用者類別 ────────────────────────────────────────────────
+// ===================== DTO（留在這裡即可） =====================
 public record CreateAppDto(string[]? Dates, string? Type, string? Reason);
 public record ActionDto(long AppId, string? Comment);
 public record LoginDto(string Username, string Password);
-public class SimpleUser
-{
-    public string Username { get; set; } = default!;
-    public string? Name    { get; set; }
-    public string? Role    { get; set; }
-    public string PasswordHash { get; set; } = default!;
-}
