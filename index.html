@@ -218,6 +218,91 @@
         show(await res.json());
       }catch(e){ show("讀取失敗"); }
     });
-  </script>
+  // ====== 第 2 小步：提交申請（只串 API；統計下步做） ======
+
+// 取得表單元素
+const applyForm  = document.querySelector('#applyForm');
+const applyType  = document.querySelector('#applyType');
+const applyMsg   = document.querySelector('#applyMsg');
+const dateInputs = Array.from(document.querySelectorAll('input.applyDate'));
+
+// 小工具：轉 YYYY-MM-DD
+function toYMD(d) {
+  if (!d) return null;
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return null;
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth()+1).padStart(2,'0');
+  const dd= String(dt.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+
+applyForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  applyMsg.textContent = '';
+  show(''); // 清空下方輸出
+
+  // 蒐集日期
+  const dates = dateInputs
+    .map(i => i.value.trim())
+    .filter(Boolean)
+    .map(toYMD)
+    .filter(Boolean);
+
+  // 基本檢查
+  if (!applyType?.value) {
+    applyMsg.textContent = '請先選擇「申請類型」。';
+    applyMsg.className = 'ml-3 text-sm text-red-600';
+    return;
+  }
+  if (dates.length === 0) {
+    applyMsg.textContent = '請至少選擇 1 個日期。';
+    applyMsg.className = 'ml-3 text-sm text-red-600';
+    return;
+  }
+  if (dates.length > 5) {
+    applyMsg.textContent = '一次最多只能選 5 天。';
+    applyMsg.className = 'ml-3 text-sm text-red-600';
+    return;
+  }
+
+  try {
+    // 送到後端
+    const res = await apiFetch('/api/applications', {
+      method: 'POST',
+      body: JSON.stringify({
+        dates,                 // 例如 ["2025-08-20","2025-08-21"]
+        type: applyType.value, // "regular" 或 "urgent"
+        reason: '前端送件（Canva 內頁）'
+      })
+    });
+
+    if (!res.ok) {
+      applyMsg.textContent = `送出失敗（${res.status}）`;
+      applyMsg.className = 'ml-3 text-sm text-red-600';
+      const t = await res.text().catch(()=> '');
+      if (t) show(t);
+      return;
+    }
+
+    const data = await res.json();
+    applyMsg.textContent = '送出成功！';
+    applyMsg.className = 'ml-3 text-sm text-emerald-700';
+
+    // 把回應顯示在下方
+    show({ api: '/api/applications', payload: { dates, type: applyType.value }, result: data });
+
+    // 成功後清空表單（日期欄位）但保留類型
+    dateInputs.forEach(i => i.value = '');
+
+    // 統計卡片我們在下一步更新（先不動）
+  } catch (err) {
+    console.error(err);
+    applyMsg.textContent = '送出失敗，請稍後再試';
+    applyMsg.className = 'ml-3 text-sm text-red-600';
+  }
+});
+
+</script>
 </body>
 </html>
