@@ -1,346 +1,304 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>居家上班登記系統</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <!-- Tailwind CDN（會有黃色提醒，可忽略） -->
+  <!-- Tailwind（示範用 CDN；正式可改為本地/打包） -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>.hidden{display:none}</style>
 </head>
-<body class="bg-slate-100 min-h-screen flex items-start md:items-center justify-center">
-  <main class="w-full max-w-5xl mx-auto p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-
-    <!-- 登入卡片：外層一定要有這個 id -->
-    <section id="loginSection" class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md mx-auto">
-      <div class="flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mx-auto mb-6">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2a5 5 0 00-5 5v2H6a2 2 0 00-2 2v8a3 3 0 003 3h10a3 3 0 003-3v-8a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 7V7a3 3 0 116 0v2H9z"/>
-        </svg>
+<body class="bg-slate-50 text-slate-800">
+  <div class="max-w-6xl mx-auto p-4 md:p-6">
+    <!-- 頁首 -->
+    <header class="flex items-center justify-between mb-6">
+      <h1 class="text-xl md:text-2xl font-semibold">居家上班登記系統</h1>
+      <div class="flex items-center gap-3">
+        <span id="whoami" class="text-sm text-slate-600"></span>
+        <button id="logoutBtn" class="hidden text-sm px-3 py-1.5 rounded-md bg-slate-200 hover:bg-slate-300">登出</button>
       </div>
-      <h1 class="text-2xl font-bold text-center mb-2">居家上班登記系統</h1>
-      <p class="text-center text-slate-500 mb-6">請使用您的帳號密碼登入</p>
+    </header>
 
-      <form id="loginForm" class="space-y-4">
-        <div>
-          <label class="block text-sm text-slate-600 mb-1">帳號</label>
-          <input id="username" class="w-full border rounded-lg p-3 outline-none focus:ring focus:ring-blue-200" placeholder="請輸入帳號" autocomplete="username">
+    <!-- 登入區塊 -->
+    <section id="loginSection" class="max-w-md mx-auto">
+      <div class="bg-white rounded-2xl shadow p-6 md:p-8">
+        <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M12 11c1.657 0 3-1.567 3-3.5S13.657 4 12 4 9 5.567 9 7.5 10.343 11 12 11zm0 2c-3.866 0-7 2.239-7 5v1h14v-1c0-2.761-3.134-5-7-5z"/>
+          </svg>
         </div>
-        <div>
-          <label class="block text-sm text-slate-600 mb-1">密碼</label>
-          <input id="password" type="password" class="w-full border rounded-lg p-3 outline-none focus:ring focus:ring-blue-200" placeholder="請輸入密碼" autocomplete="current-password">
-        </div>
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-3 font-medium">登入系統</button>
-        <div id="loginError" class="text-red-600 text-sm mt-2"></div>
-      </form>
+        <h2 class="text-center text-lg font-semibold mb-6">請使用帳號密碼登入</h2>
+
+        <form id="loginForm" class="grid gap-4">
+          <label class="text-sm">
+            帳號
+            <input id="username" class="mt-1 w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                   placeholder="請輸入帳號" autocomplete="username" />
+          </label>
+          <label class="text-sm">
+            密碼
+            <input id="password" type="password" class="mt-1 w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                   placeholder="請輸入密碼" autocomplete="current-password" />
+          </label>
+
+          <button type="submit" class="mt-2 w-full rounded-lg bg-blue-600 text-white py-2.5 font-medium hover:bg-blue-700">
+            登入系統
+          </button>
+          <p id="loginError" class="h-5 text-center text-sm text-red-600"></p>
+        </form>
+      </div>
     </section>
 
-    <!-- 主畫面：登入成功才顯示 -->
-    <section id="appSection" class="bg-white rounded-2xl shadow-lg p-0 overflow-hidden w-full">
-  <!-- 頂端導覽列 -->
-  <header class="flex items-center justify-between bg-slate-50 px-6 py-4 border-b">
-    <nav class="flex gap-6 text-sm">
-      <a class="text-blue-600 font-medium border-b-2 border-blue-600 pb-1" href="javascript:void(0)">申請居家上班</a>
-      <a class="text-slate-500 hover:text-slate-700" href="javascript:void(0)">待核准申請</a>
-      <a class="text-slate-500 hover:text-slate-700" href="javascript:void(0)">申請記錄</a>
-      <a class="text-slate-500 hover:text-slate-700" href="javascript:void(0)">月報統計</a>
-    </nav>
-    <div class="flex items-center gap-3 text-sm">
-      <span id="whoami" class="text-slate-600">Rachel（L1）</span>
-      <button id="logoutBtn" class="px-3 py-1.5 rounded-lg border text-slate-700 hover:bg-slate-100">登出</button>
-    </div>
-  </header>
+    <!-- 主功能區（登入後顯示） -->
+    <section id="appSection" class="hidden">
+      <!-- 假導覽 -->
+      <nav class="mb-4">
+        <ul class="flex items-center gap-3 text-sm">
+          <li class="px-3 py-1.5 rounded-md bg-white shadow font-medium">申請居家上班</li>
+          <li class="px-3 py-1.5 rounded-md text-slate-500">待核准申請</li>
+          <li class="px-3 py-1.5 rounded-md text-slate-500">申請記錄</li>
+          <li class="px-3 py-1.5 rounded-md text-slate-500">月報統計</li>
+        </ul>
+      </nav>
 
-  <!-- 內容區 -->
-  <div class="p-6 md:p-8">
-    <h2 class="text-lg font-semibold mb-4">申請居家上班</h2>
-
-    <!-- 三個統計卡片 -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-      <div class="rounded-xl border bg-indigo-50/40 p-4">
-        <p class="text-violet-700 text-3xl font-extrabold text-center" id="cntWeek">5</p>
-        <p class="text-center text-slate-500 text-sm">本周剩餘天數<br><span class="text-xs">(單周最多 5 天)</span></p>
-      </div>
-      <div class="rounded-xl border bg-blue-50/40 p-4">
-        <p class="text-blue-700 text-3xl font-extrabold text-center" id="cntBiWeek">10</p>
-        <p class="text-center text-slate-500 text-sm">雙周剩餘天數<br><span class="text-xs">(兩週合計最多 10 天)</span></p>
-      </div>
-      <div class="rounded-xl border bg-emerald-50/40 p-4">
-        <p class="text-emerald-700 text-3xl font-extrabold text-center" id="cntMonth">20</p>
-        <p class="text-center text-slate-500 text-sm">本月剩餘天數<br><span class="text-xs">(每月最多 20 天)</span></p>
-      </div>
-    </div>
-
-    <!-- 申請表單 -->
-    <form id="applyForm" class="space-y-4 max-w-3xl">
-      <!-- 申請類型 -->
-      <div>
-        <label class="block text-sm text-slate-600 mb-1">申請類型</label>
-        <select id="applyType" class="w-full border rounded-lg px-3 py-2 outline-none focus:ring focus:ring-blue-200">
-          <option value="" selected>請選擇</option>
-          <option value="regular">一般（regular）</option>
-          <option value="urgent">急件（urgent）</option>
-        </select>
-      </div>
-
-      <!-- 日期（最多五天） -->
-      <div>
-        <label class="block text-sm text-slate-600 mb-1">申請日期（最多可選 5 天）</label>
-        <div class="space-y-3">
-          <input type="date" class="applyDate w-full border rounded-lg px-3 py-2">
-          <input type="date" class="applyDate w-full border rounded-lg px-3 py-2">
-          <input type="date" class="applyDate w-full border rounded-lg px-3 py-2">
-          <input type="date" class="applyDate w-full border rounded-lg px-3 py-2">
-          <input type="date" class="applyDate w-full border rounded-lg px-3 py-2">
+      <div class="bg-white rounded-2xl shadow p-5 md:p-7">
+        <!-- 三張統計卡（下一步再串真數字） -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+          <div class="rounded-xl border border-slate-200 p-4">
+            <div class="text-3xl font-bold text-purple-600 text-center">5</div>
+            <div class="text-center text-sm mt-1">本周剩餘天數<br><span class="text-xs text-slate-500">（單周最多 5 天）</span></div>
+          </div>
+          <div class="rounded-xl border border-slate-200 p-4">
+            <div class="text-3xl font-bold text-blue-600 text-center">10</div>
+            <div class="text-center text-sm mt-1">雙周剩餘天數<br><span class="text-xs text-slate-500">（兩週合計最多 10 天）</span></div>
+          </div>
+          <div class="rounded-xl border border-slate-200 p-4">
+            <div class="text-3xl font-bold text-green-600 text-center">20</div>
+            <div class="text-center text-sm mt-1">本月剩餘天數<br><span class="text-xs text-slate-500">（每月最多 20 天）</span></div>
+          </div>
         </div>
+
+        <!-- 申請表單 -->
+        <form id="applyForm" class="grid gap-4">
+          <div>
+            <label class="text-sm">申請類型</label>
+            <select id="applyType" class="mt-1 w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500">
+              <option value="regular" selected>一般（regular）</option>
+              <option value="urgent">急件（urgent）</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-sm">申請日期（最多可選 5 天）</label>
+            <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input type="date" class="applyDate rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500" />
+              <input type="date" class="applyDate rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500" />
+              <input type="date" class="applyDate rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500" />
+              <input type="date" class="applyDate rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500" />
+              <input type="date" class="applyDate rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500" />
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button type="submit" class="rounded-lg bg-blue-600 text-white px-4 py-2.5 font-medium hover:bg-blue-700">
+              提交申請
+            </button>
+            <span id="applyMsg" class="text-sm text-emerald-700"></span>
+          </div>
+        </form>
       </div>
 
-      <!-- 送出 -->
-      <div class="pt-2">
-        <button id="btnSubmit" type="submit"
-                class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
-          提交申請
-        </button>
-        <span id="applyMsg" class="ml-3 text-sm text-slate-600"></span>
-      </div>
-    </form>
-
-    <!-- 結果輸出區（保留） -->
-    <pre id="out" class="mt-6 p-3 bg-slate-50 rounded-lg text-sm overflow-auto max-h-80"></pre>
+      <!-- 下方輸出（方便測試觀察） -->
+      <pre id="out" class="mt-6 whitespace-pre-wrap bg-slate-100 rounded-xl p-4 border border-slate-200 text-sm"></pre>
+    </section>
   </div>
-</section>
-  </main>
 
-  <!-- 內嵌 JS：不再依賴 main.js 檔，避免 404 -->
   <script type="module">
-    // === 設定：你的雲端 API ===
+    // === API base ===
     const API_BASE = "https://wfh-demo.onrender.com";
 
-    // === 工具 ===
-    const $  = (s)=>document.querySelector(s);
-    const show = (x)=>{ const el=$("#out"); if(el) el.textContent = typeof x==="string"?x:JSON.stringify(x,null,2); };
+    // === 小工具 ===
+    const $  = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+    const show = (obj) => {
+      const el = $("#out");
+      if (!el) return;
+      el.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+    };
 
-    // === Token ===
-    const saveToken = t=>localStorage.setItem("jwt",t);
-    const getToken  = ()=>localStorage.getItem("jwt");
-    const clearToken= ()=>localStorage.removeItem("jwt");
+    // === Token 存取 ===
+    function saveToken(t){ localStorage.setItem("jwt", t); }
+    function getToken(){  return localStorage.getItem("jwt"); }
+    function clearToken(){ localStorage.removeItem("jwt"); }
 
-    // === 自動帶 Authorization 的 fetch ===
-    async function apiFetch(path, options={}){
+    // === 帶 Authorization 的 fetch ===
+    async function apiFetch(path, options = {}) {
       const token = getToken();
-      const headers = Object.assign({"Content-Type":"application/json"}, options.headers||{});
-      if(token) headers["Authorization"] = `Bearer ${token}`;
+      const headers = Object.assign(
+        { "Content-Type": "application/json" },
+        options.headers || {}
+      );
+      if (token) headers["Authorization"] = `Bearer ${token}`;
       return fetch(`${API_BASE}${path}`, { ...options, headers });
     }
 
-    // ====== Login：只有在按登入且有帳密時才打 /api/login ======
-const loginForm  = document.querySelector('#loginForm');
-const userInput  = document.querySelector('#username');
-const passInput  = document.querySelector('#password');
-const loginError = document.querySelector('#loginError');
+    // === 顯示/隱藏區塊 ===
+    const loginSection = $("#loginSection");
+    const appSection   = $("#appSection");
+    function toApp(){
+      loginSection?.classList.add("hidden");
+      appSection?.classList.remove("hidden");
+    }
+    function toLogin(){
+      appSection?.classList.add("hidden");
+      loginSection?.classList.remove("hidden");
+    }
 
-loginForm?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  loginError && (loginError.textContent = '');
+    // === 登入 ===
+    const loginForm  = $("#loginForm");
+    const userInput  = $("#username");
+    const passInput  = $("#password");
+    const loginError = $("#loginError");
+    const whoamiEl   = $("#whoami");
+    const logoutBtn  = $("#logoutBtn");
 
-  const username = (userInput?.value || '').trim();
-  const password = (passInput?.value || '').trim();
-  if (!username || !password) {
-    loginError && (loginError.textContent = '請輸入帳號與密碼');
-    return;
-  }
+    loginForm?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      loginError.textContent = "";
 
-  try {
-    // 可選：先喚醒後端，避免免費方案冷啟動
-    await fetch(`${API_BASE}/api/health`).catch(()=>{});
-
-    const res = await fetch(`${API_BASE}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-
-    if (!res.ok) {
-      if (res.status === 401) {
-        loginError && (loginError.textContent = '帳號或密碼錯誤');
-      } else {
-        loginError && (loginError.textContent = `登入失敗（${res.status}）`);
+      const username = (userInput?.value || "").trim();
+      const password = (passInput?.value || "").trim();
+      if (!username || !password) {
+        loginError.textContent = "請輸入帳號與密碼";
+        return;
       }
-      return;
-    }
 
-    const data = await res.json(); // { token, name, role }
-    if (!data?.token) {
-      loginError && (loginError.textContent = '登入回應不完整');
-      return;
-    }
+      try {
+        // 可選：喚醒後端（避免冷啟動）
+        await fetch(`${API_BASE}/api/health`).catch(()=>{});
 
-    saveToken(data.token);
-    // 顯示誰登入
-    const who = document.querySelector('#whoami');
-    if (who) who.textContent = `${data.name}（${data.role}）`;
-
-    // 切換到主畫面
-    toApp();
-
-  } catch (err) {
-    console.error(err);
-    loginError && (loginError.textContent = '登入失敗，請稍後再試');
-  }
-});
-    
-    // === 登出 ===
-    logoutBtn?.addEventListener("click", ()=>{
-      clearToken();
-      toLogin();
-    });
-
-    // === 範例：送出申請 ===
-    btnDemoCreate?.addEventListener("click", async ()=>{
-      try{
-        const res = await apiFetch("/api/applications", {
-          method:"POST",
-          body: JSON.stringify({
-            dates:["2025-08-20","2025-08-21"],
-            type:"regular",
-            reason:"前端測試送件（雲端）"
-          })
+        const res = await fetch(`${API_BASE}/api/login`, {
+          method: "POST",
+          headers: { "Content-Type":"application/json" },
+          body: JSON.stringify({ username, password })
         });
-        show(await res.json());
-      }catch(e){ show("送件失敗"); }
+
+        if (!res.ok) {
+          loginError.textContent = res.status === 401 ? "帳號或密碼錯誤" : `登入失敗（${res.status}）`;
+          return;
+        }
+
+        const data = await res.json(); // { token, name, role }
+        if (!data?.token) { loginError.textContent = "登入回應不完整"; return; }
+
+        saveToken(data.token);
+        if (whoamiEl) whoamiEl.textContent = `${data.name}（${data.role}）`;
+        toApp();
+      } catch (err) {
+        console.error(err);
+        loginError.textContent = "登入失敗，請稍後再試";
+      }
     });
 
-    // === 範例：讀取清單 ===
-    btnList?.addEventListener("click", async ()=>{
-      try{
-        const res = await apiFetch("/api/applications");
-        show(await res.json());
-      }catch(e){ show("讀取失敗"); }
-    });
-  // ====== 第 2 小步：提交申請（只串 API；統計下步做） ======
-
-// 取得表單元素
-const applyForm  = document.querySelector('#applyForm');
-const applyType  = document.querySelector('#applyType');
-const applyMsg   = document.querySelector('#applyMsg');
-const dateInputs = Array.from(document.querySelectorAll('input.applyDate'));
-
-// 小工具：轉 YYYY-MM-DD
-function toYMD(d) {
-  if (!d) return null;
-  const dt = new Date(d);
-  if (isNaN(dt.getTime())) return null;
-  const y = dt.getFullYear();
-  const m = String(dt.getMonth()+1).padStart(2,'0');
-  const dd= String(dt.getDate()).padStart(2,'0');
-  return `${y}-${m}-${dd}`;
-}
-
-applyForm?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  applyMsg.textContent = '';
-  show(''); // 清空下方輸出
-
-  // 蒐集日期
-  const dates = dateInputs
-    .map(i => i.value.trim())
-    .filter(Boolean)
-    .map(toYMD)
-    .filter(Boolean);
-
-  // 基本檢查
-  if (!applyType?.value) {
-    applyMsg.textContent = '請先選擇「申請類型」。';
-    applyMsg.className = 'ml-3 text-sm text-red-600';
-    return;
-  }
-  if (dates.length === 0) {
-    applyMsg.textContent = '請至少選擇 1 個日期。';
-    applyMsg.className = 'ml-3 text-sm text-red-600';
-    return;
-  }
-  if (dates.length > 5) {
-    applyMsg.textContent = '一次最多只能選 5 天。';
-    applyMsg.className = 'ml-3 text-sm text-red-600';
-    return;
-  }
-
-  try {
-    // 送到後端
-    const res = await apiFetch('/api/applications', {
-      method: 'POST',
-      body: JSON.stringify({
-        dates,                 // 例如 ["2025-08-20","2025-08-21"]
-        type: applyType.value, // "regular" 或 "urgent"
-        reason: '前端送件（Canva 內頁）'
-      })
+    // === 登出 ===
+    logoutBtn?.addEventListener("click", () => {
+      clearToken();
+      if (whoamiEl) whoamiEl.textContent = "";
+      toLogin();
+      show("");
     });
 
-    if (!res.ok) {
-      applyMsg.textContent = `送出失敗（${res.status}）`;
-      applyMsg.className = 'ml-3 text-sm text-red-600';
-      const t = await res.text().catch(()=> '');
-      if (t) show(t);
-      return;
-    }
+    // === 送申請（只有 /api/applications，沒有 /api/apply） ===
+    const applyForm  = $("#applyForm");
+    const applyType  = $("#applyType");
+    const applyMsg   = $("#applyMsg");
+    const dateInputs = [...$$("input.applyDate")];
 
-    const data = await res.json();
-    applyMsg.textContent = '送出成功！';
-    applyMsg.className = 'ml-3 text-sm text-emerald-700';
-
-    // 把回應顯示在下方
-    show({ api: '/api/applications', payload: { dates, type: applyType.value }, result: data });
-
-    // 成功後清空表單（日期欄位）但保留類型
-    dateInputs.forEach(i => i.value = '');
-
-    // 統計卡片我們在下一步更新（先不動）
-  } catch (err) {
-    console.error(err);
-    applyMsg.textContent = '送出失敗，請稍後再試';
-    applyMsg.className = 'ml-3 text-sm text-red-600';
-  }
-});
-
-</script>
-</body>
-</html>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.querySelector('#applyForm');
-    if (!form) return;
-
-    form.addEventListener('submit', async (e) => {
+    // 防重複綁定
+    if (applyForm && !applyForm.dataset.bound) {
+      applyForm.dataset.bound = "1";
+      applyForm.addEventListener("submit", async (e) => {
         e.preventDefault();
+        applyMsg.textContent = "";
+        show("");
 
-        const type = document.querySelector('#applyType').value;
-        const dates = [...document.querySelectorAll('input.applyDate')]
-            .map(input => input.value)
-            .filter(v => v);
+        // 蒐集日期
+        const dates = dateInputs
+          .map(i => (i.value || "").trim())
+          .filter(Boolean)
+          .map(d => {
+            const dt = new Date(d);
+            if (Number.isNaN(dt.getTime())) return null;
+            const y = dt.getFullYear();
+            const m = String(dt.getMonth()+1).padStart(2,"0");
+            const dd= String(dt.getDate()).padStart(2,"0");
+            return `${y}-${m}-${dd}`;
+          })
+          .filter(Boolean);
 
-        if (!type || dates.length === 0) {
-            alert('請選擇申請類型並至少輸入一個日期');
-            return;
+        if (!applyType?.value) {
+          applyMsg.textContent = "請先選擇「申請類型」。";
+          applyMsg.className = "text-sm text-red-600";
+          return;
+        }
+        if (dates.length === 0) {
+          applyMsg.textContent = "請至少選 1 個日期。";
+          applyMsg.className = "text-sm text-red-600";
+          return;
+        }
+        if (dates.length > 5) {
+          applyMsg.textContent = "一次最多只能選 5 天。";
+          applyMsg.className = "text-sm text-red-600";
+          return;
         }
 
         try {
-            const res = await fetch('/api/apply', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`
-                },
-                body: JSON.stringify({ type, dates })
-            });
+          const res = await apiFetch("/api/applications", {
+            method: "POST",
+            body: JSON.stringify({
+              dates,
+              type: applyType.value,
+              reason: "前端送件（Canva 內頁）"
+            })
+          });
 
-            if (!res.ok) throw new Error('送出失敗');
+          if (!res.ok) {
+            applyMsg.textContent = `送出失敗（${res.status}）`;
+            applyMsg.className = "text-sm text-red-600";
+            const t = await res.text().catch(()=> "");
+            if (t) show(t);
+            return;
+          }
 
-            alert('送出成功！');
-            form.reset();
+          const data = await res.json(); // { appId: n }
+          applyMsg.textContent = "送出成功！";
+          applyMsg.className = "text-sm text-emerald-700";
+          show({ api: "/api/applications", payload: { dates, type: applyType.value }, result: data });
+
+          // 清空日期欄（保留類型）
+          dateInputs.forEach(i => i.value = "");
         } catch (err) {
-            console.error(err);
-            alert('送出失敗，請稍後再試');
+          console.error(err);
+          applyMsg.textContent = "送出失敗，請稍後再試";
+          applyMsg.className = "text-sm text-red-600";
         }
-    });
-});
-</script>
+      });
+    }
+
+    // === 首次載入：若已有 token，直接進主畫面 ===
+    (async () => {
+      const token = getToken();
+      if (!token) return;
+      try {
+        // 簡單驗證/喚醒
+        const r = await apiFetch("/api/health");
+        if (r.ok) {
+          // 不知道使用者姓名時，先顯示「已登入」
+          if (whoamiEl && !whoamiEl.textContent) whoamiEl.textContent = "已登入";
+          toApp();
+        }
+      } catch {}
+    })();
+  </script>
+</body>
+</html>
