@@ -3,7 +3,6 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const app = express();
 
-// 設置 Postgres 連接
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
@@ -11,7 +10,6 @@ const pool = new Pool({
 app.use(cors());
 app.use(express.json());
 
-// API 路由
 app.get('/api/applications', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM applications');
