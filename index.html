@@ -168,4 +168,220 @@
     </div>
 
     <script>
-        // 登入
+        // 登入邏輯
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // 模擬登入驗證（實際應用中應連接到後端 API）
+            if (username === 'admin' && password === 'password') {
+                document.getElementById('loginPage').classList.add('hidden');
+                document.getElementById('mainSystem').classList.remove('hidden');
+                document.getElementById('userInfo').textContent = `歡迎, ${username}`;
+                loadApplications();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        });
+
+        // 登出邏輯
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            document.getElementById('mainSystem').classList.add('hidden');
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('loginError').classList.add('hidden');
+        });
+
+        // 標籤頁切換
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active', 'border-blue-500', 'text-blue-600'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+                button.classList.add('active', 'border-blue-500', 'text-blue-600');
+                document.getElementById(button.dataset.tab + 'Tab').classList.remove('hidden');
+                if (button.dataset.tab === 'pending') loadPendingApplications();
+                if (button.dataset.tab === 'history') loadHistoryApplications();
+            });
+        });
+
+        // 申請表單提交
+        document.getElementById('applyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const applicant = document.getElementById('applyApplicant').value;
+            const applicantName = document.getElementById('applyApplicantName').value;
+            const department = document.getElementById('applyDepartment').value;
+            const dates = JSON.parse(document.getElementById('applyDates').value || '[]');
+            const type = document.getElementById('applyType').value;
+            const reason = document.getElementById('applyReason').value;
+            const status = 'Pending';
+            const submitTime = new Date().toISOString();
+            const approvals = [];
+
+            const response = await fetch('https://wfh-backend-tgdn.onrender.com/api/applications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ applicant, applicantName, department, dates, type, reason, status, submitTime, approvals })
+            });
+
+            if (response.ok) {
+                document.getElementById('applySuccess').classList.remove('hidden');
+                document.getElementById('applyError').classList.add('hidden');
+                setTimeout(() => document.getElementById('applySuccess').classList.add('hidden'), 3000);
+                document.getElementById('applyForm').reset();
+                loadApplications();
+            } else {
+                document.getElementById('applyError').classList.remove('hidden');
+                document.getElementById('applySuccess').classList.add('hidden');
+            }
+        });
+
+        // 載入申請數據
+        async function loadApplications() {
+            const response = await fetch('https://wfh-backend-tgdn.onrender.com/api/applications');
+            const applications = await response.json();
+            // 這裡可以根據需要更新 UI
+            console.log('Applications:', applications);
+        }
+
+        // 載入待核准申請
+        async function loadPendingApplications() {
+            const response = await fetch('https://wfh-backend-tgdn.onrender.com/api/applications');
+            const applications = await response.json();
+            const pendingList = document.getElementById('pendingList');
+            pendingList.innerHTML = applications
+                .filter(app => app.status === 'Pending')
+                .map(app => `
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <p>申請人: ${app.applicantName}</p>
+                        <p>日期: ${app.dates.join(', ')}</p>
+                        <p>狀態: <span class="${getStatusColor(app.status)} px-2 py-1 rounded">${getStatusText(app.status)}</span></p>
+                    </div>
+                `).join('');
+        }
+
+        // 載入申請記錄
+        async function loadHistoryApplications() {
+            const response = await fetch('https://wfh-backend-tgdn.onrender.com/api/applications');
+            const applications = await response.json();
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = applications
+                .map(app => `
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <p>申請人: ${app.applicantName}</p>
+                        <p>日期: ${app.dates.join(', ')}</p>
+                        <p>狀態: <span class="${getStatusColor(app.status)} px-2 py-1 rounded">${getStatusText(app.status)}</span></p>
+                        <p>提交時間: ${new Date(app.submitTime).toLocaleString()}</p>
+                    </div>
+                `).join('');
+        }
+
+        // 產生月報
+        document.getElementById('generateReport').addEventListener('click', async () => {
+            const month = document.getElementById('reportMonth').value;
+            const response = await fetch('https://wfh-backend-tgdn.onrender.com/api/applications');
+            const applications = await response.json();
+            const users = {};
+
+            applications.forEach(app => {
+                const [year, monthNum] = app.submitTime.split('T')[0].split('-');
+                if (`${year}-${monthNum}` === month) {
+                    if (!users[app.applicantName]) users[app.applicantName] = { department: app.department, workDays: new Set() };
+                    app.dates.forEach(day => users[app.applicantName].workDays.add(day));
+                }
+            });
+
+            const daysInMonth = new Date(month.split('-')[0], month.split('-')[1], 0).getDate();
+            const reportDaysHeader = document.getElementById('reportDaysHeader');
+            reportDaysHeader.innerHTML = Array.from({ length: daysInMonth }, (_, i) => `<th class="px-4 py-2 border">${i + 1}</th>`).join('');
+
+            const reportBody = document.getElementById('reportBody');
+            reportBody.innerHTML = Object.entries(users).map(([name, user]) => {
+                let rowHtml = `<tr><td class="px-2 py-2 border">${name}</td><td class="px-2 py-2 border">${user.department}</td>`;
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const hasWork = user.workDays.has(`${month}-${day.toString().padStart(2, '0')}`);
+                    rowHtml += `<td class="px-2 py-2 text-center border border-gray-300">${hasWork ? '✓' : ''}</td>`;
+                }
+                rowHtml += '</tr>';
+                return rowHtml;
+            }).join('');
+
+            document.getElementById('reportContent').classList.remove('hidden');
+            document.getElementById('downloadExcel').classList.remove('hidden');
+        });
+
+        // 輔助函數
+        function getStatusColor(status) {
+            switch(status) {
+                case 'pending_section': return 'bg-yellow-100 text-yellow-800';
+                case 'pending_department': return 'bg-blue-100 text-blue-800';
+                case 'approved': return 'bg-green-100 text-green-800';
+                case 'rejected': return 'bg-red-100 text-red-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function getStatusText(status) {
+            switch(status) {
+                case 'pending_section': return '待科主管核准';
+                case 'pending_department': return '待處主管核准';
+                case 'approved': return '已核准';
+                case 'rejected': return '已駁回';
+                default: return '未知狀態';
+            }
+        }
+
+        // Excel下載功能
+        document.getElementById('downloadExcel').addEventListener('click', function() {
+            const month = document.getElementById('reportMonth').value;
+            if (!month) {
+                alert('請先生成報表');
+                return;
+            }
+            
+            const [year, monthNum] = month.split('-');
+            const table = document.getElementById('reportTable');
+            
+            // 創建工作簿
+            let csvContent = '';
+            
+            // 添加表頭
+            const headers = [];
+            table.querySelectorAll('thead th').forEach(th => {
+                headers.push(th.textContent.trim());
+            });
+            csvContent += headers.join(',') + '\n';
+            
+            // 添加數據行
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                const row = [];
+                tr.querySelectorAll('td').forEach(td => {
+                    let cellText = td.textContent.trim();
+                    // 處理包含逗號的內容
+                    if (cellText.includes(',')) {
+                        cellText = `"${cellText}"`;
+                    }
+                    row.push(cellText);
+                });
+                csvContent += row.join(',') + '\n';
+            });
+            
+            // 創建下載鏈接
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `居家上班統計_${year}年${monthNum}月.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // 設置當前日期為最小值
+        document.getElementById('reportMonth').value = new Date().toISOString().slice(0, 7);
+    </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96dec59874244a64',t:'MTc1NDk4OTExNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
+</html>
