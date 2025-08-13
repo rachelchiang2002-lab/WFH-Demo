@@ -510,7 +510,7 @@
             };
             
             try {
-                const res = await fetch("https://wfh-demo.onrender.com/api/applications", {
+                const res = await fetch("https://wfh-backend-tgdn.onrender.com/api/applications", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -757,7 +757,7 @@
         // 獲取申請數據
         async function fetchApplications() {
             try {
-                const res = await fetch("https://wfh-demo.onrender.com/api/applications");
+                const res = await fetch("https://wfh-backend-tgdn.onrender.com/api/applications");
                 if (!res.ok) throw new Error("無法獲取申請數據");
                 return await res.json();
             } catch (err) {
