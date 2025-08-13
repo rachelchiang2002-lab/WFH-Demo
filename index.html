@@ -1,355 +1,1174 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>居家上班申請系統</title>
-  <!-- Tailwind（CDN 版；量體小、方便） -->
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>居家上班登記系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
-
-  <!-- ============ 登入區 ============ -->
-  <section id="loginSection" class="min-h-screen flex items-center justify-center">
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-lg p-8">
-      <div class="text-center mb-6">
-        <div class="mx-auto w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-9 w-9 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M16 11V7a4 4 0 10-8 0v4m-2 0h12m-9 4h6m-9 0a3 3 0 003 3h6a3 3 0 003-3m-12 0v-4m12 4v-4" />
-          </svg>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- 登入頁面 -->
+    <div id="loginPage" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md fade-in">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-6 4h4"></path>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">居家上班登記系統</h1>
+                <p class="text-gray-600 mt-2">請使用您的帳號密碼登入</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">帳號</label>
+                    <input type="text" id="username" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="請輸入帳號" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">密碼</label>
+                    <input type="password" id="password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="請輸入密碼" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-200 font-medium">
+                    登入系統
+                </button>
+            </form>
+            
+            <div id="loginError" class="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg hidden">
+                帳號或密碼錯誤，請重新輸入
+            </div>
         </div>
-        <h1 class="text-2xl font-bold">登入系統</h1>
-        <p class="text-sm text-gray-500 mt-1">請使用您的帳號密碼登入</p>
-      </div>
-
-      <div class="space-y-4">
-        <input id="username" class="w-full h-12 rounded-lg border px-4 text-base outline-none focus:ring-2 focus:ring-blue-500"
-               placeholder="請輸入帳號" autocomplete="username" />
-        <input id="password" type="password"
-               class="w-full h-12 rounded-lg border px-4 text-base outline-none focus:ring-2 focus:ring-blue-500"
-               placeholder="請輸入密碼" autocomplete="current-password" />
-        <button id="btnLogin"
-                class="w-full h-12 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition">
-          登入
-        </button>
-        <p id="loginMsg" class="text-center text-sm"></p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 應用主畫面 ============ -->
-  <section id="appSection" class="hidden px-4 py-6 max-w-6xl mx-auto">
-
-    <!-- 頂部列 -->
-    <div class="flex items-center justify-between mb-6">
-      <div class="space-y-1">
-        <h2 class="text-xl font-bold">居家上班申請</h2>
-        <p class="text-sm text-gray-500">登入後即可送出申請與查看統計</p>
-      </div>
-      <div class="flex items-center gap-3">
-        <span id="helloName" class="text-sm text-gray-600"></span>
-        <button id="logoutBtn" class="px-3 py-1.5 rounded border hover:bg-gray-50">登出</button>
-      </div>
     </div>
 
-    <!-- 統計卡 -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-      <div class="bg-white rounded-xl shadow p-5">
-        <p class="text-gray-500 text-sm">本週剩餘天數（每週最多 5 天）</p>
-        <p id="statWeek" class="text-3xl font-extrabold mt-1">—</p>
-      </div>
-      <div class="bg-white rounded-xl shadow p-5">
-        <p class="text-gray-500 text-sm">雙週剩餘天數（兩週合計最多 10 天）</p>
-        <p id="statBi" class="text-3xl font-extrabold mt-1">—</p>
-      </div>
-      <div class="bg-white rounded-xl shadow p-5">
-        <p class="text-gray-500 text-sm">本月剩餘天數（每月最多 20 天）</p>
-        <p id="statMonth" class="text-3xl font-extrabold mt-1">—</p>
-      </div>
+    <!-- 主系統頁面 -->
+    <div id="mainSystem" class="hidden min-h-screen">
+        <!-- 導航欄 -->
+        <nav class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-xl font-semibold text-gray-800">居家上班登記系統</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span id="userInfo" class="text-gray-600"></span>
+                        <button id="logoutBtn" class="text-red-600 hover:text-red-800 font-medium">登出</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主要內容 -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- 標籤頁 -->
+            <div class="mb-8">
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-8" id="tabNavigation">
+                        <button class="tab-btn active py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600" data-tab="apply">申請居家上班</button>
+                        <button class="tab-btn py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700" data-tab="pending">待核准申請</button>
+                        <button class="tab-btn py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700" data-tab="history">申請記錄</button>
+                        <button class="tab-btn py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700" data-tab="report">月報統計</button>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- 申請居家上班 -->
+            <div id="applyTab" class="tab-content">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-6">申請居家上班</h2>
+                    
+                    <!-- 申請功能區塊 -->
+                    <div id="applySection">
+                        <!-- 額度顯示 -->
+                        <div id="quotaDisplay" class="bg-blue-50 rounded-lg p-4 mb-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-purple-600" id="remainingWeek">5</div>
+                                    <div class="text-sm text-purple-700">本周剩餘天數</div>
+                                    <div class="text-xs text-purple-600">(單周最多5天)</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-blue-600" id="remainingBiweek">5</div>
+                                    <div class="text-sm text-blue-700">雙周剩餘天數</div>
+                                    <div class="text-xs text-blue-600">(雙周最多5天)</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-green-600" id="remainingMonth">20</div>
+                                    <div class="text-sm text-green-700">本月剩餘天數</div>
+                                    <div class="text-xs text-green-600">(單月最多20天)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form id="applyForm" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">申請類型</label>
+                                <select id="applyType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                                    <option value="">請選擇</option>
+                                    <option value="regular">一般申請</option>
+                                    <option value="urgent">臨時需求</option>
+                                </select>
+                            </div>
+                            
+                            <div id="reasonSection" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">申請原因 <span class="text-red-500">*</span></label>
+                                <textarea id="applyReason" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="請說明臨時申請的原因"></textarea>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-4">申請日期 (最多可選5天)</label>
+                                <div id="dateInputs" class="space-y-3">
+                                    <div class="flex items-center space-x-3">
+                                        <input type="date" class="date-input flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="選擇日期">
+                                        <button type="button" class="remove-date-btn hidden bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 text-sm">移除</button>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="date" class="date-input flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="選擇日期">
+                                        <button type="button" class="remove-date-btn hidden bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 text-sm">移除</button>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="date" class="date-input flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="選擇日期">
+                                        <button type="button" class="remove-date-btn hidden bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 text-sm">移除</button>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="date" class="date-input flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="選擇日期">
+                                        <button type="button" class="remove-date-btn hidden bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 text-sm">移除</button>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="date" class="date-input flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="選擇日期">
+                                        <button type="button" class="remove-date-btn hidden bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 text-sm">移除</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="datePreview" class="hidden bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 mb-2">申請日期預覽：</h4>
+                                <div id="selectedDates" class="text-sm text-gray-600"></div>
+                                <div id="totalDays" class="text-sm font-medium text-blue-600 mt-2"></div>
+                            </div>
+                            
+                            <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-200 font-medium">
+                                提交申請
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 待核准申請 -->
+            <div id="pendingTab" class="tab-content hidden">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-6">待核准申請</h2>
+                    <div id="pendingList" class="space-y-4">
+                        <!-- 動態生成待核准項目 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 申請記錄 -->
+            <div id="historyTab" class="tab-content hidden">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-6">申請記錄</h2>
+                    <div id="historyList" class="space-y-4">
+                        <!-- 動態生成歷史記錄 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 月報統計 -->
+            <div id="reportTab" class="tab-content hidden">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-6">月報統計</h2>
+                    
+                    <div class="mb-6 flex items-center space-x-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">選擇月份</label>
+                            <input type="month" id="reportMonth" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="flex space-x-2 pt-6">
+                            <button id="generateReport" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200">
+                                生成報表
+                            </button>
+                            <button id="downloadExcel" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 hidden">
+                                下載Excel
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="reportContent" class="hidden">
+                        <div class="overflow-x-auto">
+                            <table id="reportTable" class="min-w-full divide-y divide-gray-200 border border-gray-300">
+                                <thead class="bg-gray-50">
+                                    <tr id="reportTableHeader">
+                                        <!-- 動態生成表頭 -->
+                                    </tr>
+                                </thead>
+                                <tbody id="reportTableBody" class="bg-white divide-y divide-gray-200">
+                                    <!-- 動態生成報表內容 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- 申請表單 -->
-    <div class="bg-white rounded-xl shadow p-6">
-      <form id="applyForm" class="space-y-5">
-        <!-- 類型 -->
-        <div>
-          <label class="block text-sm text-gray-600 mb-1">申請類型</label>
-          <select id="applyType" class="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="regular">一般（regular）</option>
-            <option value="urgent">急件（urgent）</option>
-          </select>
-          <p id="typeHint" class="text-xs text-gray-500 mt-1"></p>
-        </div>
-
-        <!-- 日期（最多 5 天） -->
-        <div>
-          <label class="block text-sm text-gray-600 mb-1">申請日期（最多可選 5 天）</label>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <input type="date" class="applyDate h-12 rounded-lg border px-3 outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="date" class="applyDate h-12 rounded-lg border px-3 outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="date" class="applyDate h-12 rounded-lg border px-3 outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="date" class="applyDate h-12 rounded-lg border px-3 outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="date" class="applyDate h-12 rounded-lg border px-3 outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-        </div>
-
-        <!-- 原因 -->
-        <div id="reasonRow" class="hidden">
-          <label class="block text-sm text-gray-600 mb-1">原因（急件必填）</label>
-          <textarea id="applyReason" rows="3"
-                    class="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="請填寫急件原因"></textarea>
-        </div>
-
-        <div class="flex items-center gap-3">
-          <button type="submit"
-                  class="h-12 px-5 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition">
-            提交申請
-          </button>
-          <span id="applyMsg" class="text-sm"></span>
-        </div>
-      </form>
-    </div>
-  </section>
-
-  <!-- ============ 前端邏輯 ============ -->
-  <script type="module">
-    // ====== 環境設定 ======
-    const API_BASE = "https://wfh-demo.onrender.com"; // ← 若換雲端網址改這裡
-
-    // ====== 小工具 ======
-    const $  = (sel, root=document) => root.querySelector(sel);
-    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-    const fmt = (d) => {
-      const x = new Date(d); const y = x.getFullYear();
-      const m = String(x.getMonth()+1).padStart(2,'0');
-      const dd= String(x.getDate()).padStart(2,'0');
-      return `${y}-${m}-${dd}`;
-    };
-    const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); x.setHours(0,0,0,0); return x; };
-    const startOfWeekMon = (d) => {
-      const x = new Date(d); x.setHours(0,0,0,0);
-      const dow = x.getDay(); // 0=Sun
-      const offset = (dow === 0 ? -6 : 1 - dow);
-      return addDays(x, offset);
-    };
-    const inRange = (dateStr, s, e) => {
-      const t = new Date(dateStr); t.setHours(0,0,0,0);
-      return (t >= s && t <= e);
-    };
-
-    // ====== JWT 包裝 ======
-    async function apiFetch(path, options={}) {
-      const url = path.startsWith("http") ? path : (API_BASE + path);
-      options.headers = options.headers || {};
-      const t = localStorage.getItem("jwt");
-      if (t) options.headers["Authorization"] = "Bearer " + t;
-      if (options.body && typeof options.body === "object") {
-        options.headers["Content-Type"] = "application/json";
-      }
-      return fetch(url, options);
-    }
-
-    // ====== UI 切換 ======
-    function toApp(user) {
-      $("#loginSection").classList.add("hidden");
-      $("#appSection").classList.remove("hidden");
-      $("#helloName").textContent = user ? `${user.name}（${user.role}）` : "";
-    }
-    function toLogin() {
-      $("#loginSection").classList.remove("hidden");
-      $("#appSection").classList.add("hidden");
-      $("#username").value = "";
-      $("#password").value = "";
-      $("#loginMsg").textContent = "";
-    }
-
-    // ====== 登入/登出 ======
-    $("#btnLogin").addEventListener("click", async () => {
-      const u = $("#username").value.trim();
-      const p = $("#password").value.trim();
-      const msg = $("#loginMsg");
-      msg.textContent = ""; msg.className = "text-center text-sm";
-
-      if (!u || !p) {
-        msg.textContent = "請輸入帳號與密碼";
-        msg.classList.add("text-red-600");
-        return;
-      }
-      try {
-        const res = await apiFetch("/api/login", {
-          method: "POST",
-          body: JSON.stringify({ username: u, password: p })
-        });
-        if (!res.ok) throw 0;
-        const data = await res.json(); // { token, name, role }
-        localStorage.setItem("jwt", data.token);
-        toApp({ name: data.name, role: data.role });
-        await refreshStats();
-      } catch {
-        msg.textContent = "登入失敗，請檢查帳號密碼";
-        msg.classList.add("text-red-600");
-      }
-    });
-
-    $("#logoutBtn").addEventListener("click", () => {
-      localStorage.removeItem("jwt");
-      toLogin();
-    });
-
-    // ====== 類型切換：更新提示 + 顯示/隱藏原因 + 調整 date min/max ======
-    function getRuleRange(type) {
-      const today = new Date(); today.setHours(0,0,0,0);
-      const thisMon = startOfWeekMon(today);
-      const thisSun = addDays(thisMon, 6);
-      if (type === "urgent") {
-        const start = today; // 不含過去
-        return { start, end: thisSun, hint: `急件：限本週（${fmt(thisMon)} ~ ${fmt(thisSun)}）且不得選擇今天之前` };
-      } else {
-        const nextMon = addDays(thisMon, 7);
-        const nextSun = addDays(thisMon, 13);
-        return { start: nextMon, end: nextSun, hint: `一般：限下週（${fmt(nextMon)} ~ ${fmt(nextSun)}）` };
-      }
-    }
-
-    function applyTypeChanged() {
-      const type = $("#applyType").value;
-      const { start, end, hint } = getRuleRange(type);
-      $("#typeHint").textContent = hint;
-
-      // 原因顯示/必填
-      if (type === "urgent") {
-        $("#reasonRow").classList.remove("hidden");
-        $("#applyReason").setAttribute("required", "required");
-      } else {
-        $("#reasonRow").classList.add("hidden");
-        $("#applyReason").removeAttribute("required");
-        $("#applyReason").value = "";
-      }
-
-      // 調整每個 input[type=date] 的 min/max，並清掉不在範圍內的值
-      $$(".applyDate").forEach(i => {
-        i.min = fmt(start);
-        i.max = fmt(end);
-        if (i.value && !inRange(i.value, start, end)) i.value = "";
-      });
-    }
-    $("#applyType").addEventListener("change", applyTypeChanged);
-
-    // ====== 檢核：一般=下週、急件=本週（不含過去且需原因），重複/>5天 禁止 ======
-    function validateBeforeSubmit() {
-      const type = $("#applyType").value;
-      const reason = $("#applyReason").value || "";
-      const picked = $$(".applyDate").map(i => i.value.trim()).filter(Boolean);
-      const unique = [...new Set(picked)];
-      if (picked.length === 0) return { ok:false, msg:"請至少選 1 個日期" };
-      if (picked.length !== unique.length) return { ok:false, msg:"日期不可重複" };
-      if (unique.length > 5) return { ok:false, msg:"一次最多申請 5 天" };
-
-      const { start, end } = getRuleRange(type);
-      if (unique.some(d => !inRange(d, start, end))) {
-        return {
-          ok:false,
-          msg: (type === "urgent")
-              ? "急件限本週（且不得選擇今天之前）"
-              : "一般申請僅能申請下週區間"
+    <script>
+        // 系統數據
+        const systemData = {
+            users: {
+                '002365': { password: '1234', name: 'Joan', role: 'employee', department: '綜企科' },
+                '001084': { password: '1234', name: 'Rachel-科主管', role: 'section_manager', department: '綜企科' },
+                '001884': { password: '1234', name: 'Jason-處主管/CPD', role: 'department_manager', department: '產品管理處' }
+            },
+            applications: [],
+            currentUser: null
         };
-      }
-      if (type === "urgent" && !reason.trim()) {
-        return { ok:false, msg:"急件申請需填寫原因" };
-      }
-      return { ok:true, msg:"" };
-    }
 
-    // ====== 送出申請 ======
-    $("#applyForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const m = $("#applyMsg");
-      m.textContent=""; m.className="text-sm";
-
-      const chk = validateBeforeSubmit();
-      if (!chk.ok) {
-        m.textContent = chk.msg;
-        m.classList.add("text-red-600");
-        return;
-      }
-
-      const type = $("#applyType").value;
-      const reason = $("#applyReason").value || "";
-      const dates = $$(".applyDate").map(i => i.value.trim()).filter(Boolean);
-
-      try {
-        const res = await apiFetch("/api/applications", {
-          method: "POST",
-          body: JSON.stringify({ dates, type, reason })
+        // 登入功能
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (systemData.users[username] && systemData.users[username].password === password) {
+                systemData.currentUser = { username, ...systemData.users[username] };
+                document.getElementById('loginPage').classList.add('hidden');
+                document.getElementById('mainSystem').classList.remove('hidden');
+                document.getElementById('userInfo').textContent = `${systemData.currentUser.name} (${systemData.currentUser.department})`;
+                
+                // 根據角色設定頁籤顯示
+                setupTabsForRole();
+                
+                initializeDateInputs();
+                updateQuotaDisplay();
+                loadPendingApplications();
+                loadHistory();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
         });
-        if (!res.ok) throw 0;
 
-        m.textContent = "送出成功！";
-        m.classList.add("text-emerald-700");
-        // 清空欄位
-        $("#applyForm").reset();
-        applyTypeChanged(); // 重設 min/max 並隱藏原因
-        refreshStats();
-      } catch {
-        m.textContent = "送出失敗，請稍後再試";
-        m.classList.add("text-red-600");
-      }
-    });
-
-    // ====== 統計卡：串 /api/applications 自動計算 ======
-    async function refreshStats() {
-      try {
-        const res = await apiFetch("/api/applications");
-        if (!res.ok) throw 0;
-        const list = await res.json();
-
-        const today = new Date(); today.setHours(0,0,0,0);
-        const thisMon = startOfWeekMon(today);
-        const thisSun = addDays(thisMon, 6);
-        const prevMon = addDays(thisMon, -7);  // 上週一
-        const biStart = prevMon, biEnd = thisSun;
-
-        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1); monthStart.setHours(0,0,0,0);
-        const monthEnd   = new Date(today.getFullYear(), today.getMonth()+1, 0); monthEnd.setHours(0,0,0,0);
-
-        let usedWeek=0, usedBi=0, usedMonth=0;
-
-        for (const row of list || []) {
-          if (row.status === "rejected") continue; // 駁回不計
-          let days = [];
-          try { days = JSON.parse(row.datesJson) || []; } catch {}
-          for (const ds of days) {
-            const d = new Date(ds); d.setHours(0,0,0,0);
-            if (d >= thisMon  && d <= thisSun)  usedWeek++;
-            if (d >= biStart  && d <= biEnd)    usedBi++;
-            if (d >= monthStart && d <= monthEnd) usedMonth++;
-          }
+        // 根據角色設定頁籤
+        function setupTabsForRole() {
+            const applyTab = document.querySelector('[data-tab="apply"]');
+            const applyTabContent = document.getElementById('applyTab');
+            
+            if (systemData.currentUser.role === 'department_manager') {
+                applyTab.style.display = 'none';
+                applyTabContent.style.display = 'none';
+                document.querySelector('[data-tab="pending"]').click();
+            } else {
+                applyTab.style.display = 'block';
+                applyTabContent.style.display = 'block';
+            }
         }
 
-        $("#statWeek").textContent  = Math.max(0, 5  - usedWeek);
-        $("#statBi").textContent    = Math.max(0, 10 - usedBi);
-        $("#statMonth").textContent = Math.max(0, 20 - usedMonth);
-      } catch {
-        $("#statWeek").textContent  = "—";
-        $("#statBi").textContent    = "—";
-        $("#statMonth").textContent = "—";
-      }
-    }
+        // 登出功能
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            systemData.currentUser = null;
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('mainSystem').classList.add('hidden');
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginError').classList.add('hidden');
+        });
 
-    // ====== 頁面初始化 ======
-    (function init() {
-      // 若已有 JWT，嘗試直接進入主畫面
-      const t = localStorage.getItem("jwt");
-      if (t) {
-        toApp();
-        refreshStats();
-      } else {
-        toLogin();
-      }
-      applyTypeChanged(); // 設定 min/max 與提示/原因
-    })();
-  </script>
+        // 標籤頁切換
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabName = this.dataset.tab;
+                
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                    b.classList.add('border-transparent', 'text-gray-500');
+                });
+                this.classList.add('active', 'border-blue-500', 'text-blue-600');
+                this.classList.remove('border-transparent', 'text-gray-500');
+                
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.getElementById(tabName + 'Tab').classList.remove('hidden');
+                
+                updateQuotaDisplayForTab(tabName);
+            });
+        });
+
+        // 根據頁籤更新申請功能顯示
+        function updateQuotaDisplayForTab(tabName) {
+            const applySection = document.getElementById('applySection');
+            
+            if (tabName === 'apply' && systemData.currentUser.role !== 'department_manager') {
+                applySection.style.display = 'block';
+                updateQuotaDisplay();
+            } else {
+                applySection.style.display = 'none';
+            }
+        }
+
+        // 申請類型變更處理
+        document.getElementById('applyType').addEventListener('change', function() {
+            const reasonSection = document.getElementById('reasonSection');
+            const reasonTextarea = document.getElementById('applyReason');
+            
+            if (this.value === 'urgent') {
+                reasonSection.classList.remove('hidden');
+                reasonTextarea.required = true;
+            } else {
+                reasonSection.classList.add('hidden');
+                reasonTextarea.required = false;
+                reasonTextarea.value = '';
+            }
+            updateDateLimits();
+        });
+
+        // 初始化日期輸入框
+        function initializeDateInputs() {
+            const dateInputs = document.querySelectorAll('.date-input');
+            const removeBtns = document.querySelectorAll('.remove-date-btn');
+            
+            const today = new Date().toISOString().split('T')[0];
+            dateInputs.forEach(input => {
+                input.min = today;
+                input.addEventListener('change', updateDatePreview);
+            });
+            
+            removeBtns.forEach((btn, index) => {
+                btn.addEventListener('click', function() {
+                    dateInputs[index].value = '';
+                    updateDatePreview();
+                });
+            });
+        }
+
+        // 更新日期限制
+        function updateDateLimits() {
+            const applyType = document.getElementById('applyType').value;
+            const dateInputs = document.querySelectorAll('.date-input');
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (applyType === 'regular') {
+                const nextMonday = getNextMonday();
+                const nextSunday = getNextSunday();
+                const minDate = nextMonday > today ? nextMonday : today;
+                
+                dateInputs.forEach(input => {
+                    input.min = minDate;
+                    input.max = nextSunday;
+                    if (input.value && (input.value < minDate || input.value > nextSunday)) {
+                        input.value = '';
+                    }
+                });
+            } else if (applyType === 'urgent') {
+                const thisMonday = getThisMonday();
+                const thisFriday = getThisFriday();
+                const minDate = thisMonday > today ? thisMonday : today;
+                
+                dateInputs.forEach(input => {
+                    input.min = minDate;
+                    input.max = thisFriday;
+                    if (input.value && (input.value < minDate || input.value > thisFriday)) {
+                        input.value = '';
+                    }
+                });
+            } else {
+                dateInputs.forEach(input => {
+                    input.min = today;
+                    input.removeAttribute('max');
+                });
+            }
+            
+            updateDatePreview();
+        }
+
+        // 獲取下周一
+        function getNextMonday() {
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const daysUntilNextMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+            const nextMonday = new Date(today);
+            nextMonday.setDate(today.getDate() + daysUntilNextMonday);
+            return nextMonday.toISOString().split('T')[0];
+        }
+
+        // 獲取下周日
+        function getNextSunday() {
+            const nextMonday = new Date(getNextMonday());
+            const nextSunday = new Date(nextMonday);
+            nextSunday.setDate(nextMonday.getDate() + 6);
+            return nextSunday.toISOString().split('T')[0];
+        }
+
+        // 獲取本周一
+        function getThisMonday() {
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            const thisMonday = new Date(today);
+            thisMonday.setDate(today.getDate() - daysFromMonday);
+            return thisMonday.toISOString().split('T')[0];
+        }
+
+        // 獲取本周五
+        function getThisFriday() {
+            const thisMonday = new Date(getThisMonday());
+            const thisFriday = new Date(thisMonday);
+            thisFriday.setDate(thisMonday.getDate() + 4);
+            return thisFriday.toISOString().split('T')[0];
+        }
+
+        function updateDatePreview() {
+            const dateInputs = document.querySelectorAll('.date-input');
+            const removeBtns = document.querySelectorAll('.remove-date-btn');
+            const selectedDates = [];
+            
+            dateInputs.forEach((input, index) => {
+                if (input.value) {
+                    const date = new Date(input.value);
+                    if (date.getDay() !== 0 && date.getDay() !== 6) {
+                        selectedDates.push(input.value);
+                        removeBtns[index].classList.remove('hidden');
+                    } else {
+                        alert('不能選擇週末，請選擇工作天');
+                        input.value = '';
+                        removeBtns[index].classList.add('hidden');
+                    }
+                } else {
+                    removeBtns[index].classList.add('hidden');
+                }
+            });
+            
+            const uniqueDates = [...new Set(selectedDates)];
+            if (uniqueDates.length !== selectedDates.length) {
+                alert('不能選擇重複的日期');
+                return;
+            }
+            
+            const datePreview = document.getElementById('datePreview');
+            const selectedDatesDiv = document.getElementById('selectedDates');
+            const totalDays = document.getElementById('totalDays');
+            
+            if (uniqueDates.length > 0) {
+                selectedDatesDiv.innerHTML = uniqueDates.map(date => new Date(date).toLocaleDateString('zh-TW')).join('、');
+                totalDays.textContent = `共 ${uniqueDates.length} 天`;
+                datePreview.classList.remove('hidden');
+            } else {
+                datePreview.classList.add('hidden');
+            }
+        }
+
+        // 申請表單提交
+        document.getElementById('applyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const type = document.getElementById('applyType').value;
+            const reason = document.getElementById('applyReason').value;
+            const dateInputs = document.querySelectorAll('.date-input');
+            
+            const selectedDates = [];
+            dateInputs.forEach(input => {
+                if (input.value) {
+                    selectedDates.push(input.value);
+                }
+            });
+            
+            if (selectedDates.length === 0) {
+                alert('請至少選擇一個申請日期');
+                return;
+            }
+            
+            if (type === 'urgent' && !reason.trim()) {
+                alert('臨時申請需要填寫申請原因');
+                return;
+            }
+            
+            // 檢查額度限制
+            const quotaCheck = await checkQuotaLimits(selectedDates);
+            if (!quotaCheck.valid) {
+                alert(quotaCheck.message);
+                return;
+            }
+            
+            const application = {
+                id: Date.now(),
+                applicant: systemData.currentUser.username,
+                applicantName: systemData.currentUser.name,
+                department: systemData.currentUser.department,
+                dates: selectedDates.sort(),
+                type: type,
+                reason: type === 'urgent' ? reason : '',
+                status: 'pending_section',
+                submitTime: new Date().toLocaleString('zh-TW'),
+                approvals: []
+            };
+            
+            try {
+                const res = await fetch("https://wfh-system.onrender.com/api/applications", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        dates: selectedDates.sort(),
+                        type: type,
+                        reason: type === 'urgent' ? reason : '',
+                        applicant: systemData.currentUser.username,
+                        applicantName: systemData.currentUser.name,
+                        department: systemData.currentUser.department,
+                        status: 'pending_section',
+                        submitTime: new Date().toLocaleString('zh-TW')
+                    })
+                });
+                
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data?.message || "送出失敗");
+                }
+                
+                systemData.applications.push(application);
+                alert(`申請已提交（appId=${data.appId}），共申請 ${selectedDates.length} 天，等待主管核准`);
+                
+                this.reset();
+                document.getElementById('datePreview').classList.add('hidden');
+                document.getElementById('reasonSection').classList.add('hidden');
+                document.querySelectorAll('.remove-date-btn').forEach(btn => btn.classList.add('hidden'));
+                updateQuotaDisplay();
+                loadPendingApplications();
+                loadHistory();
+            } catch (err) {
+                console.error(err);
+                alert("送出失敗：" + err.message);
+            }
+        });
+
+        // 檢查額度限制
+        async function checkQuotaLimits(selectedDates) {
+            const allApps = await fetchApplications();
+            const userApps = allApps.filter(app => 
+                app.applicant === systemData.currentUser.username && 
+                ['approved', 'pending_section', 'pending_department'].includes(app.status)
+            );
+            
+            // 檢查每周1次申請
+            const thisMonday = new Date(getThisMonday());
+            const thisSunday = new Date(thisMonday);
+            thisSunday.setDate(thisMonday.getDate() + 6);
+            
+            for (const dateStr of selectedDates) {
+                const date = new Date(dateStr);
+                if (date >= thisMonday && date <= thisSunday) {
+                    const weekApps = userApps.filter(app => 
+                        app.dates.some(d => {
+                            const appDate = new Date(d);
+                            return appDate >= thisMonday && appDate <= thisSunday;
+                        })
+                    );
+                    if (weekApps.length > 0) {
+                        return { valid: false, message: `本周（${thisMonday.toLocaleDateString('zh-TW')} - ${thisSunday.toLocaleDateString('zh-TW')}）已申請過，不能再次申請` };
+                    }
+                }
+            }
+            
+            // 檢查單周5天
+            for (const dateStr of selectedDates) {
+                const date = new Date(dateStr);
+                const weekStart = getWeekStartDate(date);
+                const weekEnd = getWeekEndDate(date);
+                
+                let weekCount = 0;
+                selectedDates.forEach(d => {
+                    const checkDate = new Date(d);
+                    if (checkDate >= weekStart && checkDate <= weekEnd) {
+                        weekCount++;
+                    }
+                });
+                
+                userApps.forEach(app => {
+                    app.dates.forEach(d => {
+                        const checkDate = new Date(d);
+                        if (checkDate >= weekStart && checkDate <= weekEnd) {
+                            weekCount++;
+                        }
+                    });
+                });
+                
+                if (weekCount > 5) {
+                    const weekStr = `${weekStart.toLocaleDateString('zh-TW')}-${weekEnd.toLocaleDateString('zh-TW')}`;
+                    return { valid: false, message: `${weekStr} 該周超過5天限制！(將達${weekCount}天)` };
+                }
+            }
+            
+            // 檢查雙周5天
+            for (const dateStr of selectedDates) {
+                const date = new Date(dateStr);
+                const currentWeekStart = getWeekStartDate(date);
+                const prevWeekStart = new Date(currentWeekStart);
+                prevWeekStart.setDate(prevWeekStart.getDate() - 7);
+                const currentWeekEnd = getWeekEndDate(date);
+                
+                let biweekCount = 0;
+                selectedDates.forEach(d => {
+                    const checkDate = new Date(d);
+                    if (checkDate >= prevWeekStart && checkDate <= currentWeekEnd) {
+                        biweekCount++;
+                    }
+                });
+                
+                userApps.forEach(app => {
+                    app.dates.forEach(d => {
+                        const checkDate = new Date(d);
+                        if (checkDate >= prevWeekStart && checkDate <= currentWeekEnd) {
+                            biweekCount++;
+                        }
+                    });
+                });
+                
+                if (biweekCount > 5) {
+                    const biweekStr = `${prevWeekStart.toLocaleDateString('zh-TW')}-${currentWeekEnd.toLocaleDateString('zh-TW')}`;
+                    return { valid: false, message: `${biweekStr} 雙周超過5天限制！(將達${biweekCount}天)` };
+                }
+            }
+            
+            // 檢查月20天
+            const monthlyUsage = {};
+            selectedDates.forEach(dateStr => {
+                const month = getMonthFromDate(dateStr);
+                monthlyUsage[month] = (monthlyUsage[month] || 0) + 1;
+            });
+            
+            userApps.forEach(app => {
+                app.dates.forEach(dateStr => {
+                    const month = getMonthFromDate(dateStr);
+                    monthlyUsage[month] = (monthlyUsage[month] || 0) + 1;
+                });
+            });
+            
+            for (const [month, count] of Object.entries(monthlyUsage)) {
+                if (count > 20) {
+                    return { valid: false, message: `${month}月超過20天限制！(將達${count}天)` };
+                }
+            }
+            
+            // 檢查重複日期
+            const allDates = userApps.flatMap(app => app.dates);
+            for (const date of selectedDates) {
+                if (allDates.includes(date)) {
+                    return { valid: false, message: `日期 ${new Date(date).toLocaleDateString('zh-TW')} 已申請過` };
+                }
+            }
+            
+            return { valid: true };
+        }
+
+        // 更新額度顯示
+        async function updateQuotaDisplay() {
+            if (systemData.currentUser.role === 'department_manager') {
+                return;
+            }
+            
+            const allApps = await fetchApplications();
+            const userApps = allApps.filter(app => 
+                app.applicant === systemData.currentUser.username && 
+                ['approved', 'pending_section', 'pending_department'].includes(app.status)
+            );
+            
+            const today = new Date();
+            
+            // 本周已用天數（週一到週五）
+            let weekUsed = 0;
+            const thisMonday = new Date(getThisMonday());
+            const thisFriday = new Date(thisMonday);
+            thisFriday.setDate(thisMonday.getDate() + 4);
+            
+            userApps.forEach(app => {
+                app.dates.forEach(dateStr => {
+                    const date = new Date(dateStr);
+                    if (date >= thisMonday && date <= thisFriday) {
+                        weekUsed++;
+                    }
+                });
+            });
+            
+            // 雙周已用天數（本周 + 前一周）
+            let biweekUsed = 0;
+            const lastMonday = new Date(thisMonday);
+            lastMonday.setDate(lastMonday.getDate() - 7);
+            const lastFriday = new Date(lastMonday);
+            lastFriday.setDate(lastMonday.getDate() + 4);
+            
+            userApps.forEach(app => {
+                app.dates.forEach(dateStr => {
+                    const date = new Date(dateStr);
+                    if ((date >= lastMonday && date <= lastFriday) || (date >= thisMonday && date <= thisFriday)) {
+                        biweekUsed++;
+                    }
+                });
+            });
+            
+            // 本月已用天數
+            let monthUsed = 0;
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth() + 1;
+            
+            userApps.forEach(app => {
+                app.dates.forEach(dateStr => {
+                    const date = new Date(dateStr);
+                    if (date.getFullYear() === currentYear && date.getMonth() + 1 === currentMonth) {
+                        monthUsed++;
+                    }
+                });
+            });
+            
+            document.getElementById('remainingWeek').textContent = Math.max(0, 5 - weekUsed);
+            document.getElementById('remainingBiweek').textContent = Math.max(0, 5 - biweekUsed);
+            document.getElementById('remainingMonth').textContent = Math.max(0, 20 - monthUsed);
+        }
+
+        // 獲取某日期所在周的開始日期（週一）
+        function getWeekStartDate(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            const monday = new Date(d.setDate(diff));
+            monday.setHours(0, 0, 0, 0);
+            return monday;
+        }
+
+        // 獲取某日期所在周的結束日期（週五）
+        function getWeekEndDate(date) {
+            const weekStart = getWeekStartDate(date);
+            const friday = new Date(weekStart);
+            friday.setDate(weekStart.getDate() + 4);
+            friday.setHours(23, 59, 59, 999);
+            return friday;
+        }
+
+        // 從日期獲取月
+        function getMonthFromDate(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        // 獲取申請數據
+        async function fetchApplications() {
+            try {
+                const res = await fetch("https://wfh-system.onrender.com/api/applications");
+                if (!res.ok) throw new Error("無法獲取申請數據");
+                return await res.json();
+            } catch (err) {
+                console.error(err);
+                return systemData.applications;
+            }
+        }
+
+        // 載入待核准申請
+        async function loadPendingApplications() {
+            const pendingList = document.getElementById('pendingList');
+            const userRole = systemData.currentUser.role;
+            const allApps = await fetchApplications();
+            
+            let pendingApps = [];
+            if (userRole === 'section_manager') {
+                pendingApps = allApps.filter(app => 
+                    app.status === 'pending_section' && 
+                    app.department === systemData.currentUser.department
+                );
+            } else if (userRole === 'department_manager') {
+                pendingApps = allApps.filter(app => 
+                    app.status === 'pending_department'
+                );
+            } else {
+                pendingApps = allApps.filter(app => 
+                    app.applicant === systemData.currentUser.username && 
+                    ['pending_section', 'pending_department'].includes(app.status)
+                );
+            }
+            
+            if (pendingApps.length === 0) {
+                pendingList.innerHTML = '<p class="text-gray-500 text-center py-8">目前沒有待核准的申請</p>';
+                return;
+            }
+            
+            pendingList.innerHTML = pendingApps.map(app => `
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800">${app.applicantName} - ${app.department}</h3>
+                            <p class="text-sm text-gray-600 mt-1">申請日期: ${app.dates.join('、')}</p>
+                            <p class="text-sm text-gray-600">申請天數: ${app.dates.length} 天</p>
+                            <p class="text-sm text-gray-600">申請類型: ${app.type === 'regular' ? '一般申請' : '臨時需求'}</p>
+                            ${app.reason ? `<p class="text-sm text-gray-600">申請原因: ${app.reason}</p>` : ''}
+                            <p class="text-sm text-gray-500 mt-2">提交時間: ${app.submitTime}</p>
+                        </div>
+                        <div class="flex flex-col space-y-2 ml-4">
+                            <span class="px-3 py-1 text-xs rounded-full ${getStatusColor(app.status)}">${getStatusText(app.status)}</span>
+                            ${canApprove(app) ? `
+                                <button onclick="approveApplication('${app._id}')" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
+                                    核准
+                                </button>
+                                <button onclick="rejectApplication('${app._id}')" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
+                                    駁回
+                                </button>
+                            ` : ''}
+                            ${canWithdraw(app) ? `
+                                <button onclick="withdrawApplication('${app._id}')" class="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700">
+                                    撤回
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 核准申請
+        async function approveApplication(appId) {
+            const allApps = await fetchApplications();
+            const app = allApps.find(a => a._id === appId);
+            if (!app) return;
+            
+            const approval = {
+                approver: systemData.currentUser.username,
+                approverName: systemData.currentUser.name,
+                role: systemData.currentUser.role,
+                time: new Date().toLocaleString('zh-TW'),
+                action: 'approved'
+            };
+            
+            try {
+                const res = await fetch(`https://wfh-system.onrender.com/api/applications/${appId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: app.status === 'pending_section' ? 'pending_department' : 'approved',
+                        approvals: [...app.approvals, approval]
+                    })
+                });
+                
+                if (!res.ok) throw new Error('核准失敗');
+                
+                if (app.status === 'pending_section') {
+                    sendNotificationToDepartmentManager(app);
+                    alert('申請已核准，已通知處主管進行二階核准');
+                } else {
+                    alert('申請已核准');
+                }
+                
+                loadPendingApplications();
+                loadHistory();
+                updateQuotaDisplay();
+            } catch (err) {
+                console.error(err);
+                alert('核准失敗：' + err.message);
+            }
+        }
+
+        // 駁回申請
+        async function rejectApplication(appId) {
+            const reason = prompt('請輸入駁回原因:');
+            if (!reason) return;
+            
+            const allApps = await fetchApplications();
+            const app = allApps.find(a => a._id === appId);
+            if (!app) return;
+            
+            const approval = {
+                approver: systemData.currentUser.username,
+                approverName: systemData.currentUser.name,
+                role: systemData.currentUser.role,
+                time: new Date().toLocaleString('zh-TW'),
+                action: 'rejected',
+                reason: reason
+            };
+            
+            try {
+                const res = await fetch(`https://wfh-system.onrender.com/api/applications/${appId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'rejected',
+                        approvals: [...app.approvals, approval]
+                    })
+                });
+                
+                if (!res.ok) throw new Error('駁回失敗');
+                
+                alert('申請已駁回');
+                loadPendingApplications();
+                loadHistory();
+                updateQuotaDisplay();
+            } catch (err) {
+                console.error(err);
+                alert('駁回失敗：' + err.message);
+            }
+        }
+
+        // 撤回申請
+        async function withdrawApplication(appId) {
+            if (!confirm('確定要撤回此申請？')) return;
+            
+            try {
+                const res = await fetch(`https://wfh-system.onrender.com/api/applications/${appId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'withdrawn' })
+                });
+                
+                if (!res.ok) throw new Error('撤回失敗');
+                
+                alert('申請已撤回');
+                loadPendingApplications();
+                loadHistory();
+                updateQuotaDisplay();
+            } catch (err) {
+                console.error(err);
+                alert('撤回失敗：' + err.message);
+            }
+        }
+
+        // 檢查是否可以核准
+        function canApprove(app) {
+            const userRole = systemData.currentUser.role;
+            if (userRole === 'section_manager' && app.status === 'pending_section' && app.department === systemData.currentUser.department) {
+                return true;
+            }
+            if (userRole === 'department_manager' && app.status === 'pending_department') {
+                return true;
+            }
+            return false;
+        }
+
+        // 檢查是否可以撤回
+        function canWithdraw(app) {
+            return systemData.currentUser.username === app.applicant && 
+                   ['pending_section', 'pending_department'].includes(app.status);
+        }
+
+        // 發送通知給處主管
+        function sendNotificationToDepartmentManager(app) {
+            const notification = {
+                id: Date.now(),
+                type: 'email_notification',
+                recipient: 'manager2',
+                subject: '居家上班申請待核准通知',
+                content: `
+                    親愛的處主管您好，
+                    
+                    有一筆居家上班申請需要您的核准：
+                    
+                    申請人：${app.applicantName} (${app.department})
+                    申請日期：${app.dates.join('、')}
+                    申請天數：${app.dates.length} 天
+                    申請類型：${app.type === 'regular' ? '一般申請' : '臨時需求'}
+                    ${app.reason ? `申請原因：${app.reason}` : ''}
+                    
+                    請登入系統進行核准作業。
+                    
+                    系統自動通知
+                `,
+                sentTime: new Date().toLocaleString('zh-TW'),
+                status: 'sent'
+            };
+            
+            if (!systemData.notifications) {
+                systemData.notifications = [];
+            }
+            systemData.notifications.push(notification);
+            console.log('郵件通知已發送給處主管:', notification);
+        }
+
+        // 載入申請記錄
+        async function loadHistory() {
+            const historyList = document.getElementById('historyList');
+            const allApps = await fetchApplications();
+            const userApps = allApps.filter(app => 
+                systemData.currentUser.role === 'employee' ? 
+                app.applicant === systemData.currentUser.username : 
+                true
+            );
+            
+            if (userApps.length === 0) {
+                historyList.innerHTML = '<p class="text-gray-500 text-center py-8">目前沒有申請記錄</p>';
+                return;
+            }
+            
+            historyList.innerHTML = userApps.map(app => `
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800">${app.applicantName} - ${app.department}</h3>
+                            <p class="text-sm text-gray-600 mt-1">申請日期: ${app.dates.join('、')}</p>
+                            <p class="text-sm text-gray-600">申請天數: ${app.dates.length} 天</p>
+                            <p class="text-sm text-gray-600">申請類型: ${app.type === 'regular' ? '一般申請' : '臨時需求'}</p>
+                            ${app.reason ? `<p class="text-sm text-gray-600">申請原因: ${app.reason}</p>` : ''}
+                            <p class="text-sm text-gray-500 mt-2">提交時間: ${app.submitTime}</p>
+                            ${app.approvals.length > 0 ? `
+                                <div class="mt-3 space-y-1">
+                                    <p class="text-sm font-medium text-gray-700">核准軌跡:</p>
+                                    ${app.approvals.map(approval => `
+                                        <p class="text-xs text-gray-600 ml-2">
+                                            ${approval.time} - ${approval.approverName} ${approval.action === 'approved' ? '核准' : '駁回'}
+                                            ${approval.reason ? `(${approval.reason})` : ''}
+                                        </p>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <span class="px-3 py-1 text-xs rounded-full ${getStatusColor(app.status)}">${getStatusText(app.status)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 生成月報
+        document.getElementById('generateReport').addEventListener('click', async function() {
+            const month = document.getElementById('reportMonth').value;
+            if (!month) {
+                alert('請選擇月份');
+                return;
+            }
+            
+            const [year, monthNum] = month.split('-');
+            const daysInMonth = new Date(year, monthNum, 0).getDate();
+            
+            const allDates = [];
+            for (let day = 1; day <= daysInMonth; day++) {
+                allDates.push(`${year}-${monthNum.padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+            }
+            
+            const allApps = await fetchApplications();
+            const monthlyApps = allApps.filter(app => 
+                app.status === 'approved' &&
+                app.dates.some(dateStr => {
+                    const appDate = new Date(dateStr);
+                    return appDate.getFullYear() == year && 
+                           (appDate.getMonth() + 1) == monthNum;
+                })
+            );
+            
+            const userStats = {};
+            monthlyApps.forEach(app => {
+                if (!userStats[app.applicant]) {
+                    userStats[app.applicant] = {
+                        name: app.applicantName,
+                        department: app.department,
+                        workDays: new Set()
+                    };
+                }
+                
+                app.dates.forEach(dateStr => {
+                    const appDate = new Date(dateStr);
+                    if (appDate.getFullYear() == year && (appDate.getMonth() + 1) == monthNum) {
+                        userStats[app.applicant].workDays.add(dateStr);
+                    }
+                });
+            });
+            
+            const reportTableHeader = document.getElementById('reportTableHeader');
+            let headerHtml = `
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">員工姓名</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">居家天數</th>
+            `;
+            
+            allDates.forEach(date => {
+                const [y, m, d] = date.split('-');
+                headerHtml += `<th class="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300">${m}/${d}</th>`;
+            });
+            
+            reportTableHeader.innerHTML = headerHtml;
+            
+            const reportTableBody = document.getElementById('reportTableBody');
+            reportTableBody.innerHTML = Object.values(userStats).map(user => {
+                let rowHtml = `
+                    <tr>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 border border-gray-300">${user.name}</td>
+                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500 border border-gray-300 text-center">${user.workDays.size}</td>
+                `;
+                
+                allDates.forEach(date => {
+                    const hasWork = user.workDays.has(date);
+                    rowHtml += `<td class="px-2 py-2 text-center border border-gray-300">${hasWork ? '✓' : ''}</td>`;
+                });
+                
+                rowHtml += '</tr>';
+                return rowHtml;
+            }).join('');
+            
+            document.getElementById('reportContent').classList.remove('hidden');
+            document.getElementById('downloadExcel').classList.remove('hidden');
+        });
+
+        // Excel下載功能
+        document.getElementById('downloadExcel').addEventListener('click', function() {
+            const month = document.getElementById('reportMonth').value;
+            if (!month) {
+                alert('請先生成報表');
+                return;
+            }
+            
+            const [year, monthNum] = month.split('-');
+            const table = document.getElementById('reportTable');
+            
+            let csvContent = '';
+            const headers = [];
+            table.querySelectorAll('thead th').forEach(th => {
+                headers.push(th.textContent.trim());
+            });
+            csvContent += headers.join(',') + '\n';
+            
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                const row = [];
+                tr.querySelectorAll('td').forEach(td => {
+                    let cellText = td.textContent.trim();
+                    if (cellText.includes(',')) {
+                        cellText = `"${cellText}"`;
+                    }
+                    row.push(cellText);
+                });
+                csvContent += row.join(',') + '\n';
+            });
+            
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `居家上班統計_${year}年${monthNum}月.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // 輔助函數
+        function getStatusColor(status) {
+            switch(status) {
+                case 'pending_section': return 'bg-yellow-100 text-yellow-800';
+                case 'pending_department': return 'bg-blue-100 text-blue-800';
+                case 'approved': return 'bg-green-100 text-green-800';
+                case 'rejected': return 'bg-red-100 text-red-800';
+                case 'withdrawn': return 'bg-gray-100 text-gray-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function getStatusText(status) {
+            switch(status) {
+                case 'pending_section': return '待科主管核准';
+                case 'pending_department': return '待處主管核准';
+                case 'approved': return '已核准';
+                case 'rejected': return '已駁回';
+                case 'withdrawn': return '已撤回';
+                default: return '未知狀態';
+            }
+        }
+
+        // 設置當前日期為最小值
+        document.getElementById('reportMonth').value = new Date().toISOString().slice(0, 7);
+    </script>
 </body>
 </html>
