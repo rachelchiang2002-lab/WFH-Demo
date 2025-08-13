@@ -1195,7 +1195,8 @@
   const appSection   = $("#appSection");                    // 申請表單/主畫面的容器
 
   // === UI 切換（依是否已登入） ===
-  function toApp(){
+  /* 先停用顯示切換，避免整頁被藏起來
+    function toApp(){
     if (loginSection && loginSection.classList) loginSection.classList.add("hidden");
     if (appSection) appSection.classList.remove("hidden");
   }
@@ -1210,7 +1211,7 @@
   } else {
     toLogin();
   }
-
+*/
   // === 登入送出 ===
   if (loginForm) {
     loginForm.addEventListener("submit", async (e) => {
