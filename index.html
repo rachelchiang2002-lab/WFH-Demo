@@ -306,3 +306,42 @@ applyForm?.addEventListener('submit', async (e) => {
 </script>
 </body>
 </html>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('#applyForm');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const type = document.querySelector('#applyType').value;
+        const dates = [...document.querySelectorAll('input.applyDate')]
+            .map(input => input.value)
+            .filter(v => v);
+
+        if (!type || dates.length === 0) {
+            alert('請選擇申請類型並至少輸入一個日期');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/apply', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+                },
+                body: JSON.stringify({ type, dates })
+            });
+
+            if (!res.ok) throw new Error('送出失敗');
+
+            alert('送出成功！');
+            form.reset();
+        } catch (err) {
+            console.error(err);
+            alert('送出失敗，請稍後再試');
+        }
+    });
+});
+</script>
