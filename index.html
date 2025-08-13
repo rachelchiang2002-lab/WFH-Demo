@@ -4,17 +4,14 @@
   <meta charset="utf-8">
   <title>居家上班登記系統</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <!-- Tailwind CDN（有黃字提醒無妨，功能正常） -->
+  <!-- Tailwind CDN（會有黃色提醒，可忽略） -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* GitHub Pages 沒有預設 .hidden，就自己備一份 */
-    .hidden{ display:none; }
-  </style>
+  <style>.hidden{display:none}</style>
 </head>
 <body class="bg-slate-100 min-h-screen flex items-start md:items-center justify-center">
   <main class="w-full max-w-5xl mx-auto p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
 
-    <!-- 登入卡片 -->
+    <!-- 登入卡片：外層一定要有這個 id -->
     <section id="loginSection" class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md mx-auto">
       <div class="flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mx-auto mb-6">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9" viewBox="0 0 24 24" fill="currentColor">
@@ -38,7 +35,7 @@
       </form>
     </section>
 
-    <!-- 主畫面（登入後顯示） -->
+    <!-- 主畫面：登入成功才顯示 -->
     <section id="appSection" class="hidden bg-white rounded-2xl shadow-lg p-6 md:p-8">
       <div class="flex items-start justify-between mb-6">
         <div>
@@ -65,121 +62,113 @@
     </section>
   </main>
 
-  <!-- 內嵌 JS：不再依賴外部 main.js -->
+  <!-- 內嵌 JS：不再依賴 main.js 檔，避免 404 -->
   <script type="module">
-    // ===== 設定 =====
-    const API_BASE = "https://wfh-demo.onrender.com"; // 雲端 API 網址
+    // === 設定：你的雲端 API ===
+    const API_BASE = "https://wfh-demo.onrender.com";
 
-    // ===== 小工具 =====
-    const $  = (sel) => document.querySelector(sel);
-    const $$ = (sel) => document.querySelectorAll(sel);
-    const show = (x) => { const el = $("#out"); if (el) el.textContent = typeof x==="string" ? x : JSON.stringify(x,null,2); };
+    // === 工具 ===
+    const $  = (s)=>document.querySelector(s);
+    const show = (x)=>{ const el=$("#out"); if(el) el.textContent = typeof x==="string"?x:JSON.stringify(x,null,2); };
 
-    // ===== Token 存取 =====
-    function saveToken(t){ localStorage.setItem("jwt", t); }
-    function getToken(){ return localStorage.getItem("jwt"); }
-    function clearToken(){ localStorage.removeItem("jwt"); }
+    // === Token ===
+    const saveToken = t=>localStorage.setItem("jwt",t);
+    const getToken  = ()=>localStorage.getItem("jwt");
+    const clearToken= ()=>localStorage.removeItem("jwt");
 
-    // ===== 包裝過的 fetch（自動帶 Authorization） =====
-    async function apiFetch(path, options = {}) {
+    // === 自動帶 Authorization 的 fetch ===
+    async function apiFetch(path, options={}){
       const token = getToken();
-      const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
-      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const headers = Object.assign({"Content-Type":"application/json"}, options.headers||{});
+      if(token) headers["Authorization"] = `Bearer ${token}`;
       return fetch(`${API_BASE}${path}`, { ...options, headers });
     }
 
-    // ===== 取得畫面元素 =====
+    // === 抓元素 ===
     const loginSection = $("#loginSection");
-    const loginForm    = $("#loginForm");
-    const userInput    = $("#username");
-    const passInput    = $("#password");
-    const loginError   = $("#loginError");
-    const appSection   = $("#appSection");
-    const whoami       = $("#whoami");
-    const logoutBtn    = $("#logoutBtn");
-    const btnDemoCreate= $("#btnDemoCreate");
-    const btnList      = $("#btnList");
+    const loginForm = $("#loginForm");
+    const userInput = $("#username");
+    const passInput = $("#password");
+    const loginError = $("#loginError");
+    const appSection = $("#appSection");
+    const whoami = $("#whoami");
+    const logoutBtn = $("#logoutBtn");
+    const btnDemoCreate = $("#btnDemoCreate");
+    const btnList = $("#btnList");
 
-    // ===== 切換畫面 =====
+    // === 畫面切換 ===
     function toApp(me){
-      if (loginSection) loginSection.classList.add("hidden");
-      if (appSection)   appSection.classList.remove("hidden");
-      if (whoami && me) whoami.textContent = `${me.name || me.username}（${me.role || ""}）`;
+      loginSection?.classList.add("hidden");
+      appSection?.classList.remove("hidden");
+      if(whoami && me) whoami.textContent = `${me.name || me.username}（${me.role || ""}）`;
     }
     function toLogin(){
-      if (appSection)   appSection.classList.add("hidden");
-      if (loginSection) loginSection.classList.remove("hidden");
-      if (loginError)   loginError.textContent = "";
+      appSection?.classList.add("hidden");
+      loginSection?.classList.remove("hidden");
+      if(loginError) loginError.textContent = "";
     }
 
-    // 初始：如已有 token 就先進主畫面（不阻擋）
-    if (getToken()) { toApp(); }
+    // 如果本地已有 token，就先讓使用者進主畫面（避免空白）
+    if(getToken()){ toApp(); }
 
-    // ===== 登入流程 =====
-    if (loginForm){
-      loginForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        loginError.textContent = "";
-        try {
-          // 先喚醒後端（免得冷啟動太久）
-          fetch(`${API_BASE}/api/health`).catch(()=>{});
-          const res = await fetch(`${API_BASE}/api/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              username: (userInput?.value || "").trim(),
-              password: (passInput?.value || "")
-            })
-          });
-          if (!res.ok) {
-            loginError.textContent = res.status === 401 ? "帳號或密碼錯誤" : `登入失敗（${res.status}）`;
-            return;
-          }
-          const data = await res.json(); // { token, name, role }
-          saveToken(data.token);
-          toApp(data);
-          alert(`登入成功：${data.name || ""}（${data.role || ""}）`);
-        } catch (err) {
-          loginError.textContent = "登入失敗，請稍後再試";
-          console.error(err);
+    // === 登入 ===
+    loginForm?.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      loginError.textContent = "";
+
+      try{
+        // 先喚醒後端（免費方案冷啟動）
+        fetch(`${API_BASE}/api/health`).catch(()=>{});
+        const res = await fetch(`${API_BASE}/api/login`, {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({
+            username: (userInput?.value||"").trim(),
+            password: (passInput?.value||"")
+          })
+        });
+        if(!res.ok){
+          loginError.textContent = res.status===401 ? "帳號或密碼錯誤" : `登入失敗（${res.status}）`;
+          return;
         }
-      });
-    }
+        const data = await res.json(); // { token, name, role }
+        saveToken(data.token);
+        toApp(data);
+        alert(`登入成功：${data.name||""}（${data.role||""}）`);
+      }catch(err){
+        loginError.textContent = "登入失敗，請稍後再試";
+        console.error(err);
+      }
+    });
 
-    // ===== 登出 =====
-    if (logoutBtn){
-      logoutBtn.addEventListener("click", () => {
-        clearToken();
-        toLogin();
-      });
-    }
+    // === 登出 ===
+    logoutBtn?.addEventListener("click", ()=>{
+      clearToken();
+      toLogin();
+    });
 
-    // ===== 示範：送出申請 =====
-    if (btnDemoCreate){
-      btnDemoCreate.addEventListener("click", async () => {
-        try {
-          const res = await apiFetch("/api/applications", {
-            method: "POST",
-            body: JSON.stringify({
-              dates: ["2025-08-20","2025-08-21"],
-              type: "regular",
-              reason: "前端測試送件（雲端）"
-            })
-          });
-          show(await res.json());
-        } catch (e) { show("送件失敗"); }
-      });
-    }
+    // === 範例：送出申請 ===
+    btnDemoCreate?.addEventListener("click", async ()=>{
+      try{
+        const res = await apiFetch("/api/applications", {
+          method:"POST",
+          body: JSON.stringify({
+            dates:["2025-08-20","2025-08-21"],
+            type:"regular",
+            reason:"前端測試送件（雲端）"
+          })
+        });
+        show(await res.json());
+      }catch(e){ show("送件失敗"); }
+    });
 
-    // ===== 示範：讀取清單 =====
-    if (btnList){
-      btnList.addEventListener("click", async () => {
-        try {
-          const res = await apiFetch("/api/applications");
-          show(await res.json());
-        } catch (e) { show("讀取失敗"); }
-      });
-    }
+    // === 範例：讀取清單 ===
+    btnList?.addEventListener("click", async ()=>{
+      try{
+        const res = await apiFetch("/api/applications");
+        show(await res.json());
+      }catch(e){ show("讀取失敗"); }
+    });
   </script>
 </body>
 </html>
