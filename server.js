@@ -49,7 +49,7 @@ app.post('/api/applications', async (req, res) => {
       `INSERT INTO applications (applicant, applicantName, department, dates, type, reason, status, submitTime, approvals) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
        RETURNING *`,
-      [applicant, applicantName, department, dates, type, reason, status, submitTime, approvals]
+      [applicant, applicantName, department, JSON.stringify(dates), type, reason, status, submitTime, JSON.stringify(approvals)]
     );
     res.json(result.rows[0]);
   } catch (err) {
