@@ -1,53 +1,15 @@
-const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
-const app = express();
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-// 初始化表（僅在表不存在時執行）
-(async () => {
+app.post('/api/applications', async (req, res) => {
   try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS applications (
-        id SERIAL PRIMARY KEY,
-        applicant VARCHAR(255),
-        applicantName VARCHAR(255),
-        department VARCHAR(255),
-        dates JSONB,
-        type VARCHAR(255),
-        reason TEXT,
-        status VARCHAR(255),
-        submitTime TIMESTAMP,
-        approvals JSONB
-      )
-    `);
-    console.log('Table "applications" created or already exists');
-  } catch (err) {
-    console.error('Error creating table:', err);
-  }
-})();
-
-app.use(cors());
-app.use(express.json());
-
-app.get('/api/applications', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM applications');
-    res.json(result.rows);
+    const { applicant, applicantName, department, dates, type, reason, status, submitTime, approvals } = req.body;
+    const result = await pool.query(
+      `INSERT INTO applications (applicant, applicantName, department, dates, type, reason, status, submitTime, approvals) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+       RETURNING *`,
+      [applicant, applicantName, department, dates, type, reason, status, submitTime, approvals]
+    );
+    res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    if (err.code === '42P01') { // 表不存在錯誤（應已處理）
-      res.json([]);
-    } else {
-      res.status(500).json({ error: 'Database error' });
-    }
+    res.status(500).json({ error: 'Database error' });
   }
-});
-
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });
