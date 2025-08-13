@@ -1,286 +1,355 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>居家上班申請系統</title>
+  <!-- Tailwind（CDN 版；量體小、方便） -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 text-gray-800">
 
-  <!-- 登入畫面 -->
-  <div id="loginSection" class="flex min-h-screen items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-sm">
-      <h2 class="text-2xl font-bold mb-6 text-center">登入系統</h2>
-      <input id="username" class="w-full h-12 rounded-lg border px-4 text-base mb-4" placeholder="請輸入帳號">
-      <input id="password" type="password" class="w-full h-12 rounded-lg border px-4 text-base mb-6" placeholder="請輸入密碼">
-      <button id="btnLogin" class="w-full h-12 rounded-lg bg-blue-600 text-white">登入</button>
-      <p id="loginMsg" class="text-sm mt-3 text-center"></p>
+  <!-- ============ 登入區 ============ -->
+  <section id="loginSection" class="min-h-screen flex items-center justify-center">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-lg p-8">
+      <div class="text-center mb-6">
+        <div class="mx-auto w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-9 w-9 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M16 11V7a4 4 0 10-8 0v4m-2 0h12m-9 4h6m-9 0a3 3 0 003 3h6a3 3 0 003-3m-12 0v-4m12 4v-4" />
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold">登入系統</h1>
+        <p class="text-sm text-gray-500 mt-1">請使用您的帳號密碼登入</p>
+      </div>
+
+      <div class="space-y-4">
+        <input id="username" class="w-full h-12 rounded-lg border px-4 text-base outline-none focus:ring-2 focus:ring-blue-500"
+               placeholder="請輸入帳號" autocomplete="username" />
+        <input id="password" type="password"
+               class="w-full h-12 rounded-lg border px-4 text-base outline-none focus:ring-2 focus:ring-blue-500"
+               placeholder="請輸入密碼" autocomplete="current-password" />
+        <button id="btnLogin"
+                class="w-full h-12 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition">
+          登入
+        </button>
+        <p id="loginMsg" class="text-center text-sm"></p>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <!-- 主畫面 -->
-  <div id="appSection" class="hidden p-6">
+  <!-- ============ 應用主畫面 ============ -->
+  <section id="appSection" class="hidden px-4 py-6 max-w-6xl mx-auto">
 
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-xl font-bold">居家上班申請系統</h1>
-      <button id="logoutBtn" class="px-3 py-1 text-sm border rounded">登出</button>
+    <!-- 頂部列 -->
+    <div class="flex items-center justify-between mb-6">
+      <div class="space-y-1">
+        <h2 class="text-xl font-bold">居家上班申請</h2>
+        <p class="text-sm text-gray-500">登入後即可送出申請與查看統計</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="helloName" class="text-sm text-gray-600"></span>
+        <button id="logoutBtn" class="px-3 py-1.5 rounded border hover:bg-gray-50">登出</button>
+      </div>
     </div>
 
     <!-- 統計卡 -->
-    <div class="grid grid-cols-3 gap-4 mb-6">
-      <div class="bg-white p-4 rounded shadow">
-        <p class="text-gray-500">本週剩餘天數</p>
-        <p id="statWeek" class="text-2xl font-bold">5</p>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-xl shadow p-5">
+        <p class="text-gray-500 text-sm">本週剩餘天數（每週最多 5 天）</p>
+        <p id="statWeek" class="text-3xl font-extrabold mt-1">—</p>
       </div>
-      <div class="bg-white p-4 rounded shadow">
-        <p class="text-gray-500">雙週剩餘天數</p>
-        <p id="statBi" class="text-2xl font-bold">10</p>
+      <div class="bg-white rounded-xl shadow p-5">
+        <p class="text-gray-500 text-sm">雙週剩餘天數（兩週合計最多 10 天）</p>
+        <p id="statBi" class="text-3xl font-extrabold mt-1">—</p>
       </div>
-      <div class="bg-white p-4 rounded shadow">
-        <p class="text-gray-500">本月剩餘天數</p>
-        <p id="statMonth" class="text-2xl font-bold">20</p>
+      <div class="bg-white rounded-xl shadow p-5">
+        <p class="text-gray-500 text-sm">本月剩餘天數（每月最多 20 天）</p>
+        <p id="statMonth" class="text-3xl font-extrabold mt-1">—</p>
       </div>
     </div>
 
     <!-- 申請表單 -->
-    <form id="applyForm" class="bg-white p-6 rounded shadow space-y-4">
-      <div>
-        <label class="block text-sm text-gray-600 mb-1">申請類型</label>
-        <select id="applyType" class="w-full rounded border px-3 py-2">
-          <option value="regular">一般</option>
-          <option value="urgent">急件</option>
-        </select>
-      </div>
+    <div class="bg-white rounded-xl shadow p-6">
+      <form id="applyForm" class="space-y-5">
+        <!-- 類型 -->
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">申請類型</label>
+          <select id="applyType" class="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="regular">一般（regular）</option>
+            <option value="urgent">急件（urgent）</option>
+          </select>
+          <p id="typeHint" class="text-xs text-gray-500 mt-1"></p>
+        </div>
 
-      <div>
-        <label class="block text-sm text-gray-600 mb-1">申請日期（最多5天）</label>
-        <input type="date" class="applyDate w-full rounded border px-3 py-2 mb-2">
-        <input type="date" class="applyDate w-full rounded border px-3 py-2 mb-2">
-        <input type="date" class="applyDate w-full rounded border px-3 py-2 mb-2">
-        <input type="date" class="applyDate w-full rounded border px-3 py-2 mb-2">
-        <input type="date" class="applyDate w-full rounded border px-3 py-2">
-      </div>
+        <!-- 日期（最多 5 天） -->
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">申請日期（最多可選 5 天）</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <input type="date" class="applyDate h-12 rounded-lg border px-3 outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="date" class="applyDate h-12 rounded-lg border px-3 outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="date" class="applyDate h-12 rounded-lg border px-3 outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="date" class="applyDate h-12 rounded-lg border px-3 outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="date" class="applyDate h-12 rounded-lg border px-3 outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
 
-      <div>
-        <label class="block text-sm text-gray-600 mb-1">原因（急件必填）</label>
-        <textarea id="applyReason" class="hidden w-full rounded border px-3 py-2 text-sm"
-          placeholder="請填寫急件原因"></textarea>
-      </div>
+        <!-- 原因 -->
+        <div id="reasonRow" class="hidden">
+          <label class="block text-sm text-gray-600 mb-1">原因（急件必填）</label>
+          <textarea id="applyReason" rows="3"
+                    class="w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="請填寫急件原因"></textarea>
+        </div>
 
-      <p id="applyMsg" class="text-sm"></p>
-      <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">送出申請</button>
-    </form>
-  </div>
+        <div class="flex items-center gap-3">
+          <button type="submit"
+                  class="h-12 px-5 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition">
+            提交申請
+          </button>
+          <span id="applyMsg" class="text-sm"></span>
+        </div>
+      </form>
+    </div>
+  </section>
 
+  <!-- ============ 前端邏輯 ============ -->
   <script type="module">
-    // ===== API Fetch with JWT =====
-    async function apiFetch(url, options={}) {
+    // ====== 環境設定 ======
+    const API_BASE = "https://wfh-demo.onrender.com"; // ← 若換雲端網址改這裡
+
+    // ====== 小工具 ======
+    const $  = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+    const fmt = (d) => {
+      const x = new Date(d); const y = x.getFullYear();
+      const m = String(x.getMonth()+1).padStart(2,'0');
+      const dd= String(x.getDate()).padStart(2,'0');
+      return `${y}-${m}-${dd}`;
+    };
+    const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); x.setHours(0,0,0,0); return x; };
+    const startOfWeekMon = (d) => {
+      const x = new Date(d); x.setHours(0,0,0,0);
+      const dow = x.getDay(); // 0=Sun
+      const offset = (dow === 0 ? -6 : 1 - dow);
+      return addDays(x, offset);
+    };
+    const inRange = (dateStr, s, e) => {
+      const t = new Date(dateStr); t.setHours(0,0,0,0);
+      return (t >= s && t <= e);
+    };
+
+    // ====== JWT 包裝 ======
+    async function apiFetch(path, options={}) {
+      const url = path.startsWith("http") ? path : (API_BASE + path);
       options.headers = options.headers || {};
-      const token = localStorage.getItem('jwt');
-      if (token) options.headers['Authorization'] = 'Bearer ' + token;
-      if (options.body && typeof options.body === 'object') {
-        options.headers['Content-Type'] = 'application/json';
+      const t = localStorage.getItem("jwt");
+      if (t) options.headers["Authorization"] = "Bearer " + t;
+      if (options.body && typeof options.body === "object") {
+        options.headers["Content-Type"] = "application/json";
       }
       return fetch(url, options);
     }
 
-    // ===== 日期工具 =====
-    const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); x.setHours(0,0,0,0); return x; };
-    const startOfWeekMon = (d) => { 
-      const x = new Date(d); x.setHours(0,0,0,0);
-      const dow = x.getDay();
-      const offset = (dow === 0 ? -6 : 1 - dow);
-      return addDays(x, offset);
-    };
-    const inRange = (ds, s, e) => { const t = new Date(ds); t.setHours(0,0,0,0); return (t >= s && t <= e); };
-
-    function getWeekRangeForType(type) {
-      const today = new Date(); today.setHours(0,0,0,0);
-      const thisMon = startOfWeekMon(today);
-      const thisSun = addDays(thisMon, 6);
-
-      if (type === 'urgent') {
-        const start = today < thisMon ? thisMon : today;
-        return { start, end: thisSun };
-      } else {
-        const nextMon = addDays(thisMon, 7);
-        const nextSun = addDays(thisMon, 13);
-        return { start: nextMon, end: nextSun };
-      }
+    // ====== UI 切換 ======
+    function toApp(user) {
+      $("#loginSection").classList.add("hidden");
+      $("#appSection").classList.remove("hidden");
+      $("#helloName").textContent = user ? `${user.name}（${user.role}）` : "";
+    }
+    function toLogin() {
+      $("#loginSection").classList.remove("hidden");
+      $("#appSection").classList.add("hidden");
+      $("#username").value = "";
+      $("#password").value = "";
+      $("#loginMsg").textContent = "";
     }
 
-    function validateDatesByType(type, uniqueDates, reasonText) {
-      const range = getWeekRangeForType(type);
-      const outOfRange = uniqueDates.some(d => !inRange(d, range.start, range.end));
-      if (outOfRange) {
-        return { ok: false, msg: (type === 'urgent')
-          ? '急件限本週（含今天～週日），不可選過去日期'
-          : '一般申請僅能申請下週一至下週日' };
-      }
-      if (type === 'urgent' && !reasonText.trim()) {
-        return { ok: false, msg: '急件申請需填寫原因' };
-      }
-      return { ok: true, msg: '' };
-    }
+    // ====== 登入/登出 ======
+    $("#btnLogin").addEventListener("click", async () => {
+      const u = $("#username").value.trim();
+      const p = $("#password").value.trim();
+      const msg = $("#loginMsg");
+      msg.textContent = ""; msg.className = "text-center text-sm";
 
-    function toggleReasonByType(type) {
-      const reasonEl = document.getElementById('applyReason');
-      if (type === 'urgent') {
-        reasonEl.classList.remove('hidden');
-        reasonEl.setAttribute('required', 'required');
-      } else {
-        reasonEl.classList.add('hidden');
-        reasonEl.removeAttribute('required');
-        reasonEl.value = '';
-      }
-    }
-    document.getElementById('applyType').addEventListener('change', (e) => {
-      toggleReasonByType(e.target.value);
-    });
-
-    // ===== 登入 =====
-    document.getElementById('btnLogin').addEventListener('click', async () => {
-      const user = document.getElementById('username').value.trim();
-      const pass = document.getElementById('password').value.trim();
-      const msg  = document.getElementById('loginMsg');
-      msg.textContent = '';
-
-      if (!user || !pass) {
-        msg.textContent = '請輸入帳號與密碼';
-        msg.className = 'text-sm text-red-600 text-center';
+      if (!u || !p) {
+        msg.textContent = "請輸入帳號與密碼";
+        msg.classList.add("text-red-600");
         return;
       }
       try {
-        const res = await apiFetch('/api/login', {
-          method: 'POST',
-          body: JSON.stringify({ username: user, password: pass })
+        const res = await apiFetch("/api/login", {
+          method: "POST",
+          body: JSON.stringify({ username: u, password: p })
         });
-        if (!res.ok) throw new Error('登入失敗');
-        const data = await res.json();
-        localStorage.setItem('jwt', data.token);
-        toApp();
-        refreshStats();
+        if (!res.ok) throw 0;
+        const data = await res.json(); // { token, name, role }
+        localStorage.setItem("jwt", data.token);
+        toApp({ name: data.name, role: data.role });
+        await refreshStats();
       } catch {
-        msg.textContent = '登入失敗，請檢查帳號密碼';
-        msg.className = 'text-sm text-red-600 text-center';
+        msg.textContent = "登入失敗，請檢查帳號密碼";
+        msg.classList.add("text-red-600");
       }
     });
 
-    // ===== 登出 =====
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('jwt');
+    $("#logoutBtn").addEventListener("click", () => {
+      localStorage.removeItem("jwt");
       toLogin();
     });
 
-    // ===== 切換畫面 =====
-    function toApp() {
-      document.getElementById('loginSection').classList.add('hidden');
-      document.getElementById('appSection').classList.remove('hidden');
-    }
-    function toLogin() {
-      document.getElementById('loginSection').classList.remove('hidden');
-      document.getElementById('appSection').classList.add('hidden');
-    }
-
-    // ===== 送申請 =====
-    document.getElementById('applyForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const msg = document.getElementById('applyMsg');
-      msg.textContent = '';
-      msg.className = 'text-sm';
-
-      const rawDates = [...document.querySelectorAll('input.applyDate')].map(i => i.value.trim()).filter(Boolean);
-      if (!rawDates.length) {
-        msg.textContent = '請至少選 1 個日期';
-        msg.className = 'text-sm text-red-600';
-        return;
+    // ====== 類型切換：更新提示 + 顯示/隱藏原因 + 調整 date min/max ======
+    function getRuleRange(type) {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const thisMon = startOfWeekMon(today);
+      const thisSun = addDays(thisMon, 6);
+      if (type === "urgent") {
+        const start = today; // 不含過去
+        return { start, end: thisSun, hint: `急件：限本週（${fmt(thisMon)} ~ ${fmt(thisSun)}）且不得選擇今天之前` };
+      } else {
+        const nextMon = addDays(thisMon, 7);
+        const nextSun = addDays(thisMon, 13);
+        return { start: nextMon, end: nextSun, hint: `一般：限下週（${fmt(nextMon)} ~ ${fmt(nextSun)}）` };
       }
-      const normalized = rawDates.map(d => {
-        const t = new Date(d);
-        const y = t.getFullYear(), m = String(t.getMonth()+1).padStart(2,'0'), dd = String(t.getDate()).padStart(2,'0');
-        return `${y}-${m}-${dd}`;
+    }
+
+    function applyTypeChanged() {
+      const type = $("#applyType").value;
+      const { start, end, hint } = getRuleRange(type);
+      $("#typeHint").textContent = hint;
+
+      // 原因顯示/必填
+      if (type === "urgent") {
+        $("#reasonRow").classList.remove("hidden");
+        $("#applyReason").setAttribute("required", "required");
+      } else {
+        $("#reasonRow").classList.add("hidden");
+        $("#applyReason").removeAttribute("required");
+        $("#applyReason").value = "";
+      }
+
+      // 調整每個 input[type=date] 的 min/max，並清掉不在範圍內的值
+      $$(".applyDate").forEach(i => {
+        i.min = fmt(start);
+        i.max = fmt(end);
+        if (i.value && !inRange(i.value, start, end)) i.value = "";
       });
-      const uniqueDates = Array.from(new Set(normalized));
-      if (uniqueDates.length !== normalized.length) {
-        msg.textContent = '日期不可重複';
-        msg.className = 'text-sm text-red-600';
-        return;
+    }
+    $("#applyType").addEventListener("change", applyTypeChanged);
+
+    // ====== 檢核：一般=下週、急件=本週（不含過去且需原因），重複/>5天 禁止 ======
+    function validateBeforeSubmit() {
+      const type = $("#applyType").value;
+      const reason = $("#applyReason").value || "";
+      const picked = $$(".applyDate").map(i => i.value.trim()).filter(Boolean);
+      const unique = [...new Set(picked)];
+      if (picked.length === 0) return { ok:false, msg:"請至少選 1 個日期" };
+      if (picked.length !== unique.length) return { ok:false, msg:"日期不可重複" };
+      if (unique.length > 5) return { ok:false, msg:"一次最多申請 5 天" };
+
+      const { start, end } = getRuleRange(type);
+      if (unique.some(d => !inRange(d, start, end))) {
+        return {
+          ok:false,
+          msg: (type === "urgent")
+              ? "急件限本週（且不得選擇今天之前）"
+              : "一般申請僅能申請下週區間"
+        };
       }
-      if (uniqueDates.length > 5) {
-        msg.textContent = '一次最多申請 5 天';
-        msg.className = 'text-sm text-red-600';
+      if (type === "urgent" && !reason.trim()) {
+        return { ok:false, msg:"急件申請需填寫原因" };
+      }
+      return { ok:true, msg:"" };
+    }
+
+    // ====== 送出申請 ======
+    $("#applyForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const m = $("#applyMsg");
+      m.textContent=""; m.className="text-sm";
+
+      const chk = validateBeforeSubmit();
+      if (!chk.ok) {
+        m.textContent = chk.msg;
+        m.classList.add("text-red-600");
         return;
       }
 
-      const type = document.getElementById('applyType').value;
-      const reason = document.getElementById('applyReason').value;
-      const chk = validateDatesByType(type, uniqueDates, reason);
-      if (!chk.ok) {
-        msg.textContent = chk.msg;
-        msg.className = 'text-sm text-red-600';
-        return;
-      }
+      const type = $("#applyType").value;
+      const reason = $("#applyReason").value || "";
+      const dates = $$(".applyDate").map(i => i.value.trim()).filter(Boolean);
 
       try {
-        const res = await apiFetch('/api/applications', {
-          method: 'POST',
-          body: JSON.stringify({ dates: uniqueDates, type, reason })
+        const res = await apiFetch("/api/applications", {
+          method: "POST",
+          body: JSON.stringify({ dates, type, reason })
         });
-        if (!res.ok) throw new Error();
-        msg.textContent = '送出成功！';
-        msg.className = 'text-sm text-emerald-700';
-        document.getElementById('applyForm').reset();
-        toggleReasonByType(type);
+        if (!res.ok) throw 0;
+
+        m.textContent = "送出成功！";
+        m.classList.add("text-emerald-700");
+        // 清空欄位
+        $("#applyForm").reset();
+        applyTypeChanged(); // 重設 min/max 並隱藏原因
         refreshStats();
       } catch {
-        msg.textContent = '送出失敗，請稍後再試';
-        msg.className = 'text-sm text-red-600';
+        m.textContent = "送出失敗，請稍後再試";
+        m.classList.add("text-red-600");
       }
     });
 
-    // ===== 刷新統計卡 =====
+    // ====== 統計卡：串 /api/applications 自動計算 ======
     async function refreshStats() {
       try {
-        const res = await apiFetch('/api/applications');
-        if (!res.ok) return;
+        const res = await apiFetch("/api/applications");
+        if (!res.ok) throw 0;
         const list = await res.json();
 
         const today = new Date(); today.setHours(0,0,0,0);
         const thisMon = startOfWeekMon(today);
         const thisSun = addDays(thisMon, 6);
-        const prevMon = addDays(thisMon, -7);
+        const prevMon = addDays(thisMon, -7);  // 上週一
         const biStart = prevMon, biEnd = thisSun;
+
         const monthStart = new Date(today.getFullYear(), today.getMonth(), 1); monthStart.setHours(0,0,0,0);
-        const monthEnd = new Date(today.getFullYear(), today.getMonth()+1, 0); monthEnd.setHours(0,0,0,0);
+        const monthEnd   = new Date(today.getFullYear(), today.getMonth()+1, 0); monthEnd.setHours(0,0,0,0);
 
         let usedWeek=0, usedBi=0, usedMonth=0;
 
         for (const row of list || []) {
-          if (row.status === 'rejected') continue;
-          let dates = [];
-          try { dates = JSON.parse(row.datesJson) || []; } catch {}
-          for (const ds of dates) {
+          if (row.status === "rejected") continue; // 駁回不計
+          let days = [];
+          try { days = JSON.parse(row.datesJson) || []; } catch {}
+          for (const ds of days) {
             const d = new Date(ds); d.setHours(0,0,0,0);
-            if (d >= thisMon && d <= thisSun) usedWeek++;
-            if (d >= biStart && d <= biEnd) usedBi++;
+            if (d >= thisMon  && d <= thisSun)  usedWeek++;
+            if (d >= biStart  && d <= biEnd)    usedBi++;
             if (d >= monthStart && d <= monthEnd) usedMonth++;
           }
         }
-        document.getElementById('statWeek').textContent = Math.max(0, 5 - usedWeek);
-        document.getElementById('statBi').textContent = Math.max(0, 10 - usedBi);
-        document.getElementById('statMonth').textContent = Math.max(0, 20 - usedMonth);
-      } catch {}
+
+        $("#statWeek").textContent  = Math.max(0, 5  - usedWeek);
+        $("#statBi").textContent    = Math.max(0, 10 - usedBi);
+        $("#statMonth").textContent = Math.max(0, 20 - usedMonth);
+      } catch {
+        $("#statWeek").textContent  = "—";
+        $("#statBi").textContent    = "—";
+        $("#statMonth").textContent = "—";
+      }
     }
 
-    // ===== 初始化 =====
-    if (localStorage.getItem('jwt')) {
-      toApp();
-      refreshStats();
-    }
-    toggleReasonByType(document.getElementById('applyType').value);
+    // ====== 頁面初始化 ======
+    (function init() {
+      // 若已有 JWT，嘗試直接進入主畫面
+      const t = localStorage.getItem("jwt");
+      if (t) {
+        toApp();
+        refreshStats();
+      } else {
+        toLogin();
+      }
+      applyTypeChanged(); // 設定 min/max 與提示/原因
+    })();
   </script>
-
 </body>
 </html>
