@@ -118,13 +118,15 @@
     const API_BASE = "https://wfh-demo.onrender.com";
 
     // === 小工具 ===
-    const $  = (sel) => document.querySelector(sel);
-    const $$ = (sel) => document.querySelectorAll(sel);
-    const show = (obj) => {
-      const el = $("#out");
-      if (!el) return;
-      el.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
-    };
+const DEBUG = false; // ← 改成 false：正式頁不輸出
+const $  = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+const show = (obj) => {
+  if (!DEBUG) return;                 // ← 關閉輸出
+  const el = $("#out");
+  if (!el) return;
+  el.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+};
 
     // === Token 存取 ===
     function saveToken(t){ localStorage.setItem("jwt", t); }
@@ -208,82 +210,111 @@
       show("");
     });
 
-    // === 送申請（只有 /api/applications，沒有 /api/apply） ===
-    const applyForm  = $("#applyForm");
-    const applyType  = $("#applyType");
-    const applyMsg   = $("#applyMsg");
-    const dateInputs = [...$$("input.applyDate")];
+   // === 送申請（只打 /api/applications） ===
+const applyForm  = $("#applyForm");
+const applyType  = $("#applyType");
+const applyMsg   = $("#applyMsg");
+const dateInputs = [...$$("input.applyDate")];
 
-    // 防重複綁定
-    if (applyForm && !applyForm.dataset.bound) {
-      applyForm.dataset.bound = "1";
-      applyForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        applyMsg.textContent = "";
-        show("");
+// 防重複綁定
+if (applyForm && !applyForm.dataset.bound) {
+  applyForm.dataset.bound = "1";
+  applyForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    applyMsg.textContent = "";
+    applyMsg.className = "text-sm"; // 清除顏色
 
-        // 蒐集日期
-        const dates = dateInputs
-          .map(i => (i.value || "").trim())
-          .filter(Boolean)
-          .map(d => {
-            const dt = new Date(d);
-            if (Number.isNaN(dt.getTime())) return null;
-            const y = dt.getFullYear();
-            const m = String(dt.getMonth()+1).padStart(2,"0");
-            const dd= String(dt.getDate()).padStart(2,"0");
-            return `${y}-${m}-${dd}`;
-          })
-          .filter(Boolean);
+    // 1) 蒐集 & 正規化（YYYY-MM-DD）
+    const rawDates = dateInputs
+      .map(i => (i.value || "").trim())
+      .filter(Boolean);
 
-        if (!applyType?.value) {
-          applyMsg.textContent = "請先選擇「申請類型」。";
-          applyMsg.className = "text-sm text-red-600";
-          return;
-        }
-        if (dates.length === 0) {
-          applyMsg.textContent = "請至少選 1 個日期。";
-          applyMsg.className = "text-sm text-red-600";
-          return;
-        }
-        if (dates.length > 5) {
-          applyMsg.textContent = "一次最多只能選 5 天。";
-          applyMsg.className = "text-sm text-red-600";
-          return;
-        }
-
-        try {
-          const res = await apiFetch("/api/applications", {
-            method: "POST",
-            body: JSON.stringify({
-              dates,
-              type: applyType.value,
-              reason: "前端送件（Canva 內頁）"
-            })
-          });
-
-          if (!res.ok) {
-            applyMsg.textContent = `送出失敗（${res.status}）`;
-            applyMsg.className = "text-sm text-red-600";
-            const t = await res.text().catch(()=> "");
-            if (t) show(t);
-            return;
-          }
-
-          const data = await res.json(); // { appId: n }
-          applyMsg.textContent = "送出成功！";
-          applyMsg.className = "text-sm text-emerald-700";
-          show({ api: "/api/applications", payload: { dates, type: applyType.value }, result: data });
-
-          // 清空日期欄（保留類型）
-          dateInputs.forEach(i => i.value = "");
-        } catch (err) {
-          console.error(err);
-          applyMsg.textContent = "送出失敗，請稍後再試";
-          applyMsg.className = "text-sm text-red-600";
-        }
-      });
+    if (rawDates.length === 0) {
+      applyMsg.textContent = "請至少選 1 個日期。";
+      applyMsg.className = "text-sm text-red-600";
+      return;
     }
+
+    const normalized = rawDates.map(d => {
+      const t = new Date(d);
+      if (Number.isNaN(t.getTime())) return null;
+      const y = t.getFullYear();
+      const m = String(t.getMonth() + 1).padStart(2, "0");
+      const dd = String(t.getDate()).padStart(2, "0");
+      return `${y}-${m}-${dd}`;
+    }).filter(Boolean);
+
+    // 2) 去重複
+    const uniqueDates = Array.from(new Set(normalized));
+    if (uniqueDates.length !== normalized.length) {
+      applyMsg.textContent = "日期不可重複，請修正後再送出。";
+      applyMsg.className = "text-sm text-red-600";
+      return;
+    }
+
+    // 3) 最多 5 天
+    if (uniqueDates.length > 5) {
+      applyMsg.textContent = "一次最多只能申請 5 天。";
+      applyMsg.className = "text-sm text-red-600";
+      return;
+    }
+
+    // 4) 不得是過去日期
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const hasPast = uniqueDates.some(d => {
+      const t = new Date(d);
+      t.setHours(0, 0, 0, 0);
+      return t < today;
+    });
+    if (hasPast) {
+      applyMsg.textContent = "不得申請過去日期，請重新選擇。";
+      applyMsg.className = "text-sm text-red-600";
+      return;
+    }
+
+    // 5) 類型必選
+    if (!applyType?.value) {
+      applyMsg.textContent = "請先選擇「申請類型」。";
+      applyMsg.className = "text-sm text-red-600";
+      return;
+    }
+
+    try {
+      // 6) 送後端
+      const res = await apiFetch("/api/applications", {
+        method: "POST",
+        body: JSON.stringify({
+          dates: uniqueDates,
+          type: applyType.value,
+          reason: "前端送件（Canva 內頁）"
+        })
+      });
+
+      if (!res.ok) {
+        applyMsg.textContent = `送出失敗（${res.status}）`;
+        applyMsg.className = "text-sm text-red-600";
+        const t = await res.text().catch(() => "");
+        show(t);
+        return;
+      }
+
+      const data = await res.json(); // { appId: n }
+      applyMsg.textContent = "送出成功！";
+      applyMsg.className = "text-sm text-emerald-700";
+
+      // 清空日期欄（保留類型）
+      dateInputs.forEach(i => i.value = "");
+
+      // 除錯輸出（若 DEBUG=true）
+      show({ api: "/api/applications", payload: { dates: uniqueDates, type: applyType.value }, result: data });
+
+    } catch (err) {
+      console.error(err);
+      applyMsg.textContent = "送出失敗，請稍後再試";
+      applyMsg.className = "text-sm text-red-600";
+    }
+  });
+}
 
     // === 首次載入：若已有 token，直接進主畫面 ===
     (async () => {
